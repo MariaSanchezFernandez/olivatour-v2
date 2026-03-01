@@ -75,6 +75,11 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formWrapper}>
+        <Image
+          source={require('../../assets/images/Group 134.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>OlivaTour</Text>
         <Text style={styles.welcome}>¡Bienvenido!</Text>
 
@@ -168,13 +173,20 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginTop: 30,
+    marginBottom: 4,
+  },
   title: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 64,
     color: Colors.verdeOscuro,
     textAlign: 'center',
     marginBottom: 4,
-    marginTop: 40,
+    marginTop: 0,
   },
   welcome: {
     fontFamily: 'Urbanist-Bold',

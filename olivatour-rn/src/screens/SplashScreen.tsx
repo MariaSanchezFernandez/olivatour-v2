@@ -20,7 +20,7 @@ export default function SplashScreen({ onFinish }: Props) {
       <View style={styles.decorCircle2} />
       <View style={styles.content}>
         <Image
-          source={require('../assets/images/appstore.png')}
+          source={require('../assets/images/Group 134.png')}
           style={styles.logo}
           resizeMode="contain"
         />

@@ -68,6 +68,11 @@ export default function LoginScreen({ onNavigateToRegister, onNavigateToRecover 
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formWrapper}>
+        <Image
+          source={require('../../assets/images/Group 134.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>OlivaTour</Text>
 
         <TextInput
@@ -141,13 +146,20 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
   },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginTop: 40,
+    marginBottom: 4,
+  },
   title: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 64,
     color: Colors.verdeOscuro,
     textAlign: 'center',
     marginBottom: 40,
-    marginTop: 60,
+    marginTop: 0,
   },
   input: {
     backgroundColor: Colors.white,
