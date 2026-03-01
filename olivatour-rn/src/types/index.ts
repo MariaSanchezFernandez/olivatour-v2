@@ -114,6 +114,12 @@ export interface PorcentajeComarca {
   porcentaje: number;
 }
 
+export interface ImagenPoblacion {
+  id: number;
+  poblacion: string;
+  imagen: string | null;
+}
+
 // Tipos para la navegación
 export type RootStackParamList = {
   Splash: undefined;

@@ -1,5 +1,5 @@
 import { API_BASE_URL, ENDPOINTS } from '../constants/api';
-import { Comarca, Poblacion, LugarInteres, Logro } from '../types';
+import { Comarca, Poblacion, LugarInteres, Logro, ImagenPoblacion } from '../types';
 import CacheManager from './CacheManager';
 
 class AppDataService {
@@ -41,6 +41,14 @@ class AppDataService {
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) throw new Error('Error al obtener lugares de la población');
+    return response.json();
+  }
+
+  async fetchImagenesPoblaciones(comarcaId: number): Promise<ImagenPoblacion[]> {
+    const response = await fetch(`${API_BASE_URL}${ENDPOINTS.imagenesPoblaciones(comarcaId)}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Error al obtener imágenes de poblaciones');
     return response.json();
   }
 
