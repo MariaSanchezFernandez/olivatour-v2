@@ -1,0 +1,257 @@
+body {
+    background-color: #F0F0D9;
+    font-family: "Urbanist", sans-serif;
+    padding: 0;
+    margin: 0;
+}
+
+.content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.comarcas-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.comarca-btn {
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: 2px solid #8B9D5A;
+    background-color: transparent;
+    color: #8B9D5A;
+    font-family: 'Urbanist', sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.comarca-btn:hover,
+.comarca-btn.active {
+    background-color: #8B9D5A;
+    color: white;
+}
+
+.comarca-background {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    border-radius: 20px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Overlay semi-transparente */
+.comarca-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.6);
+    z-index: 1;
+}
+
+.comarca-info {
+    position: absolute;
+    left: 40px;
+    max-width: 20%;
+    bottom: 40px;
+    background-color: white;
+    padding: 15px 25px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.comarca-info-header {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 25px;
+    padding: 0 20px;
+    gap: 10px;
+}
+
+.medalla-img {
+    display: none; /* Ocultamos la imagen de la medalla en todas las tarjetas */
+}
+
+.comarca-nombre {
+    color: #333;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.porcentaje {
+    color: #8B9D5A;
+    font-weight: 600;
+}
+
+.comarca-sections {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 30px;
+    padding: 100px 40px 40px;
+}
+
+.comarca-content {
+    position: relative;
+    min-height: 500px;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.comarca-imagen-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.comarca-imagen {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block !important;
+}
+
+.comarca-imagen-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Sección izquierda - 35% */
+.left-section {
+    position: relative;
+    z-index: 2;
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px;
+}
+
+.comarca-info-principal {
+    background-color: white;
+    padding: 20px 30px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.comarca-info-principal .comarca-nombre {
+    color: #333;
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
+.comarca-info-principal .porcentaje {
+    background-color: #F0E68C;
+    color: #8B4513;
+    padding: 8px 12px;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* Sección derecha */
+.right-section {
+    position: relative;
+    z-index: 2;
+    width: 80%; /* O el ancho que tengas */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-section h3 { /* Título "Poblaciones" */
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.poblaciones-list {
+    display: grid;
+    grid-auto-flow: column; 
+    grid-template-rows: repeat(6, auto); 
+    /* grid-auto-columns será menos relevante ya que JS definirá grid-template-columns explícitamente */
+    /* Podemos dejar un fallback o un valor mínimo */
+    grid-auto-columns: minmax(180px, 1fr); /* Fallback, 1fr intentará tomar espacio disponible */
+    gap: 15px; 
+    
+    overflow-x: auto; 
+    overflow-y: hidden; 
+    
+    /* El width/maxWidth seguirá siendo ajustado por JS */
+    margin: 0 auto; 
+    padding-bottom: 10px; 
+    /* Para transiciones suaves si el número de columnas cambia */
+    transition: all 0.3s ease-in-out;
+}
+
+.poblacion-card {
+    height: 80px; 
+    width: 100%;
+    position: relative; 
+    border-radius: 15px;
+    background-color: transparent;
+    box-shadow: none; /* Eliminamos la sombra */
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.poblacion-card .imagen-poblacion {
+    max-width: 100%;  
+    max-height: 100%; 
+    object-fit: contain; /* Muestra la imagen completa, manteniendo proporción */
+    display: block; 
+    border-radius: 10px; /* Opcional: redondear la imagen misma */
+}
+
+/* Media query para móviles */
+@media (max-width: 768px) {
+    .poblaciones-list {
+        grid-auto-flow: row; 
+        grid-template-columns: 1fr; 
+        grid-template-rows: auto; 
+        grid-auto-columns: auto; 
+        overflow-x: hidden;
+        overflow-y: auto; 
+        max-height: 450px; /* Ejemplo de altura máxima en móvil con scroll vertical */
+    }
+    .poblacion-card {
+        /* width: 90%; */ /* Podría ser necesario ajustar el ancho aquí o dejarlo al 100% del grid */
+        /* margin-bottom: 15px; */ /* El gap del grid ya debería manejar esto */
+    }
+}

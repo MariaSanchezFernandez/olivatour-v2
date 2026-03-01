@@ -1,0 +1,51 @@
+.title{
+    font-weight: bold;
+    font-size: 96px;
+    color: #5E6E37;
+    font-family: "Urbanist", sans-serif;
+    margin-bottom: 50px;
+}
+
+.title a{
+    text-decoration: none;
+    color: #5E6E37;
+}
+
+.left-blade{
+    position: absolute;
+    top: 25%;
+    left: 0;
+    pointer-events: none; /* para que no pueda arrastrar la imagen al clicarla */
+}
+
+.right-blade{
+    position: absolute;
+    top: 25%;
+    right: 0;
+    pointer-events: none;
+}
+
+.backgroundLogo{
+    position: fixed;
+    bottom: -20%;
+    left: -35%;
+    /* transform: translate(-50%); */
+}
+
+.showDesktop{
+    display: block;
+}
+
+.showMobile{
+    display: none;
+}
+
+@media (max-width: 480px) {
+    .showDesktop{
+        display: none;
+    }
+
+    .showMobile{
+        display: block;
+    }
+}

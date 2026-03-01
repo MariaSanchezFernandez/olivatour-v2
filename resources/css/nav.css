@@ -1,0 +1,150 @@
+nav{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 35px 115px;
+}
+
+.logo{
+    width: 173px;
+    height: 98px;
+}
+
+/* menú */
+.menu{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: #5E6E37;
+    border-radius: 30px;
+    padding: 30px;
+    width: 70px;
+    transition: width 0.3s ease;
+    overflow: hidden;
+}
+
+.navButtons{
+    display: none;
+    padding-right: 30px;
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    order: 1;
+}
+
+.menu.open .navButtons {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+}
+
+.menu.open {
+    width: 380px;
+}
+
+.navButtons.open{
+    display: inline-block;
+}
+
+.authentication{
+    width: 285px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.enlace{
+    padding: 0px 20px;
+    border: 2px solid white;
+    border-radius: 20px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.3s;
+    width: fit-content;
+    text-align: center;
+    padding: 10px 20px;
+}
+
+.enlaceDestacado{
+    color: #FFC745 !important;
+    border: 2px solid #FFC745 !important;
+}
+
+.enlace:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.hamburgerMenu{
+    order: 2;
+}
+
+.hamburgerLogo{
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 480px) {
+    nav{
+        padding: 35px 30px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .menu {
+        flex-direction: column;
+        height: 70px;
+        transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    .navButtons {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        transform: translateY(-20px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        order: 2;
+        margin-top: 20px;
+    }
+
+    .authentication{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+
+        width: fit-content;
+        align-items: center;
+        height: inherit;
+    }
+
+    .menu.open {
+        width: 150px;
+        height: 200px;
+        align-self: end;
+    }
+
+    .menu.open .navButtons.open {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0);
+        padding: 0px;
+    }
+
+    .enlace {
+        padding: 10px 20px;
+    }
+
+    .hamburgerMenu.open{
+        align-self: end;
+    }
+
+    .hamburgerMenu{
+        order: 1;
+    }
+}

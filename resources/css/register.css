@@ -1,0 +1,115 @@
+body{
+    font-family: "Urbanist", sans-serif;
+    padding: 0px;
+    margin: 0px;
+}
+
+.formBox{
+    background-color: #5E6E37;
+    color: white;
+    border-radius: 20px;
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.buttonsLoginRegister{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding-top: 40px;
+    padding-bottom: 20px;
+}
+
+.inputsLoginRegister{
+    text-decoration: none;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.buttonsLoginRegisterStyle{
+    text-decoration: underline;
+    text-decoration-thickness: 13%;
+    text-underline-offset: 5px;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+form input{
+    height: 60px;
+}
+
+input::placeholder{
+    color: #5E6E37;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.inputName{
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.ocultar{
+    display: none;
+}
+
+.registerButton{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.botonStyle{
+    text-decoration: none;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: #7D9231;
+    padding: 10px 30px;
+    border-radius: 30px;
+    align-self: center;
+    border: none;
+}
+
+.haveAccount{
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    position: absolute;
+    bottom: -10%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.haveAccount a{
+    text-decoration: none;
+    color: black;
+}
+
+.showDesktop{
+    display: block;
+}
+
+.showMobile{
+    display: none;
+}
+
+@media (max-width: 480px) {
+    .showDesktop{
+        display: none;
+    }
+
+    .showMobile{
+        display: block;
+    }
+
+    .left-blade{
+        display: none;
+    }
+
+    .right-blade{
+        display: none;
+    }
+}
