@@ -17,12 +17,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Evitar duplicados si el contenedor se reinicia
+        if (User::count() > 0) {
+            return;
+        }
+
         $this->call([
             UserSeeder::class,
-            ComarcaSeeder::class,
-            PoblacionSeeder::class,
+            PoblacionesSeeder::class,
             LugarInteresSeeder::class,
-            LogroSeeder::class,
         ]);
     }
 }

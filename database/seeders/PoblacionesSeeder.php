@@ -23,8 +23,8 @@ class PoblacionesSeeder extends Seeder
         $nombre = $res['name'] ?? $key;
         $slug   = Str::slug($nombre, '-');
 
-        // **1.** Toma directamente el nombre de comarca del JSON
-        $nombreComarca = $data['comarca'] ?? null;
+        // **1.** Toma el nombre de comarca del JSON (campo 'comarca' o 'result.county')
+        $nombreComarca = $data['comarca'] ?? $res['county'] ?? null;
 
         // **2.** Si existe, búscala (o créala si falta)
         $comarcaId = null;
