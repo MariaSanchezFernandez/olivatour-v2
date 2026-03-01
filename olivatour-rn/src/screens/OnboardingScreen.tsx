@@ -7,11 +7,10 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
-  Animated,
+  LayoutChangeEvent,
+  Platform,
 } from 'react-native';
 import { Colors } from '../constants/colors';
-
-const { width, height } = Dimensions.get('window');
 
 interface Props {
   onFinish: () => void;
@@ -22,40 +21,62 @@ const PAGES = [
     key: '1',
     title: '¿Crees que conoces Jaén?',
     image: require('../assets/images/MapaCortado.png'),
-    imageStyle: { width: width * 0.75, height: height * 0.45 },
   },
   {
     key: '2',
     title: 'Descubre nuestra provincia a fondo',
     image: require('../assets/images/onboarding-slide2.png'),
-    imageStyle: { width: width * 0.72, height: height * 0.48 },
   },
   {
     key: '3',
     title: 'De una manera totalmente innovadora',
     image: require('../assets/images/PueblosOnBoarding.png'),
-    imageStyle: { width: width * 0.70, height: height * 0.50 },
   },
 ];
 
 export default function OnboardingScreen({ onFinish }: Props) {
   const [currentPage, setCurrentPage] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(Dimensions.get('window').width);
+  const [containerHeight, setContainerHeight] = useState(Dimensions.get('window').height);
   const flatListRef = useRef<FlatList>(null);
 
-  const renderPage = ({ item, index }: { item: typeof PAGES[0]; index: number }) => (
-    <View style={styles.page}>
+  const isLastPage = currentPage === PAGES.length - 1;
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+    setContainerHeight(e.nativeEvent.layout.height);
+  };
+
+  const goToNext = () => {
+    if (currentPage < PAGES.length - 1) {
+      const next = currentPage + 1;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      setCurrentPage(next);
+    }
+  };
+
+  const renderPage = ({ item }: { item: typeof PAGES[0] }) => (
+    <View style={[styles.page, { width: containerWidth }]}>
       <Text style={styles.pageTitle}>{item.title}</Text>
-      <Image source={item.image} style={item.imageStyle} resizeMode="contain" />
+      <Image
+        source={item.image}
+        style={{
+          width: Math.min(containerWidth * 0.75, 560),
+          height: Math.min(containerHeight * 0.45, 420),
+        }}
+        resizeMode="contain"
+      />
     </View>
   );
 
   const handleScroll = (e: any) => {
-    const page = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (containerWidth === 0) return;
+    const page = Math.round(e.nativeEvent.contentOffset.x / containerWidth);
     setCurrentPage(page);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleLayout}>
       <FlatList
         ref={flatListRef}
         data={PAGES}
@@ -66,14 +87,16 @@ export default function OnboardingScreen({ onFinish }: Props) {
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        getItemLayout={(_, index) => ({
+          length: containerWidth,
+          offset: containerWidth * index,
+          index,
+        })}
       />
 
-      {/* Última página: OlivaTour con botones */}
-      {currentPage === PAGES.length - 1 ? null : null}
-
       {/* Dots de paginación */}
-      <View style={styles.dotsContainer}>
-        {[...PAGES, { key: 'last' }].map((_, index) => (
+      <View style={styles.dotsRow}>
+        {PAGES.map((_, index) => (
           <View
             key={index}
             style={[
@@ -84,19 +107,22 @@ export default function OnboardingScreen({ onFinish }: Props) {
         ))}
       </View>
 
-      {/* Si estamos en la última página de PAGES, mostrar botones */}
-      {currentPage === PAGES.length - 1 && (
-        <View style={styles.buttonsContainer}>
-          <Text style={styles.logoText}>OlivaTour</Text>
-          <Text style={styles.subtitleText}>¿Te apuntas a conocer Jaén?</Text>
-          <TouchableOpacity style={styles.button} onPress={onFinish}>
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+      {/* Botones de acción */}
+      <View style={styles.bottomArea}>
+        {isLastPage ? (
+          <>
+            <Text style={styles.logoText}>OlivaTour</Text>
+            <Text style={styles.subtitleText}>¿Te apuntas a conocer Jaén?</Text>
+            <TouchableOpacity style={styles.button} onPress={onFinish}>
+              <Text style={styles.buttonText}>Iniciar Sesión / Registrarse</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.nextButton} onPress={goToNext}>
+            <Text style={styles.nextButtonText}>Siguiente →</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={onFinish}>
-            <Text style={styles.buttonText}>Regístrate</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -107,25 +133,26 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.verdeFondo,
   },
   page: {
-    width,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 60,
+    paddingBottom: 20,
   },
   pageTitle: {
     fontFamily: 'Urbanist-Light',
-    fontSize: 24,
+    fontSize: 26,
     textAlign: 'center',
     paddingHorizontal: 30,
-    marginBottom: 20,
+    marginBottom: 24,
     color: Colors.black,
+    maxWidth: 600,
   },
-  dotsContainer: {
+  dotsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 30,
+    paddingVertical: 16,
     gap: 10,
   },
   dot: {
@@ -140,13 +167,13 @@ const styles = StyleSheet.create({
     width: 10,
     backgroundColor: Colors.verdeClaro,
   },
-  buttonsContainer: {
-    position: 'absolute',
-    bottom: 80,
-    left: 0,
-    right: 0,
+  bottomArea: {
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingBottom: Platform.OS === 'web' ? 40 : 60,
+    maxWidth: 500,
+    alignSelf: 'center',
+    width: '100%',
   },
   logoText: {
     fontFamily: 'Urbanist-Bold',
@@ -159,22 +186,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 24,
     color: Colors.black,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: Colors.verdeSeleccionado,
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: 10,
-    marginBottom: 14,
     width: '100%',
     alignItems: 'center',
-  },
-  buttonSecondary: {
-    marginBottom: 0,
   },
   buttonText: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 18,
     color: Colors.white,
+  },
+  nextButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.verdeOscuro,
+    alignItems: 'center',
+  },
+  nextButtonText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 18,
+    color: Colors.verdeOscuro,
   },
 });

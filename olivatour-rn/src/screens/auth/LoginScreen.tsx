@@ -67,6 +67,7 @@ export default function LoginScreen({ onNavigateToRegister, onNavigateToRecover 
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={styles.formWrapper}>
         <Text style={styles.title}>OlivaTour</Text>
 
         <TextInput
@@ -119,6 +120,7 @@ export default function LoginScreen({ onNavigateToRegister, onNavigateToRecover 
             <Text style={styles.registerLink}>Regístrate</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -133,6 +135,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formWrapper: {
+    width: '100%',
+    maxWidth: 480,
   },
   title: {
     fontFamily: 'Urbanist-Bold',

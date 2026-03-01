@@ -25,10 +25,16 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
   const [contrasenia, setContrasenia] = useState('');
   const [mostrarContrasenia, setMostrarContrasenia] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleRegister = async () => {
+    setErrorMsg('');
     if (!usuario.trim() || !email.trim() || !contrasenia.trim()) {
-      Alert.alert('Error', 'Por favor, rellene todos los campos');
+      setErrorMsg('Por favor, rellene todos los campos');
+      return;
+    }
+    if (contrasenia.length < 6) {
+      setErrorMsg('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
@@ -42,21 +48,18 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
         password_confirmation: contrasenia,
       });
 
-      Alert.alert(
-        '¡Registro exitoso!',
-        'Tu cuenta ha sido creada. Inicia sesión para continuar.',
-        [{ text: 'Aceptar', onPress: onNavigateToLogin }]
-      );
+      onNavigateToLogin();
     } catch (error: any) {
-      let mensaje = 'Error desconocido';
-      if (error.message?.toLowerCase().includes('correo') || error.message?.toLowerCase().includes('email')) {
-        mensaje = 'Ese correo o nombre de usuario ya está registrado.';
-      } else if (error.message?.toLowerCase().includes('usuario') || error.message?.toLowerCase().includes('username')) {
-        mensaje = 'Ese nombre de usuario ya está en uso. Prueba con otro.';
+      let mensaje = 'Error al registrar. Inténtalo de nuevo.';
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('email') || msg.includes('correo')) {
+        mensaje = 'Ese correo ya está registrado.';
+      } else if (msg.includes('username') || msg.includes('usuario')) {
+        mensaje = 'Ese nombre de usuario ya está en uso.';
       } else if (error.message) {
         mensaje = error.message;
       }
-      Alert.alert('Error', mensaje);
+      setErrorMsg(mensaje);
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +74,7 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={styles.formWrapper}>
         <Text style={styles.title}>OlivaTour</Text>
         <Text style={styles.welcome}>¡Bienvenido!</Text>
 
@@ -113,6 +117,8 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
           </TouchableOpacity>
         </View>
 
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
         <TouchableOpacity
           style={styles.registerButton}
           onPress={handleRegister}
@@ -131,6 +137,7 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
             <Text style={styles.loginLink}>Inicia Sesión</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -145,6 +152,21 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formWrapper: {
+    width: '100%',
+    maxWidth: 480,
+  },
+  errorText: {
+    color: '#c0392b',
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 12,
+    backgroundColor: '#fdecea',
+    padding: 10,
+    borderRadius: 8,
   },
   title: {
     fontFamily: 'Urbanist-Bold',
