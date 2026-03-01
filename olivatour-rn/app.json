@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "OlivaTour",
+    "slug": "olivatour-rn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F0F0D9"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.olivatour.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F0F0D9",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.olivatour.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "OlivaTour"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-image-picker"
+    ]
+  }
+}

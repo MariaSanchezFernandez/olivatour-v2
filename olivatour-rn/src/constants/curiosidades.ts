@@ -1,0 +1,20 @@
+// Curiosidades de Jaén - portadas directamente desde CuriosidadesJaen.swift
+export const CURIOSIDADES_JAEN: string[] = [
+  'La única obra de Miguel Ángel Buonarroti en España se encuentra en la Sacra Capilla del Salvador de Úbeda.',
+  'Jaén tiene la mayor extensión de espacios naturales protegidos de España con 304.175 hectáreas.',
+  'Jaén cuenta con la mayor concentración de castillos y fortalezas de la Unión Europea, con un total de 247.',
+  'Es la única provincia española con dos ciudades declaradas Patrimonio de la Humanidad por la UNESCO: Úbeda y Baeza.',
+  'Alberga el embalse más grande de Andalucía: el Embalse del Tranco de Beas, en la Sierra de Cazorla.',
+  'La mayor oleadera del mundo en Europa se encuentra en la Sierra Mágina, con más de 30.000 ejemplares de adelfas.',
+  'Jaén es el mayor pulmón verde de España, con miles de hectáreas de bosques y espacios naturales.',
+  'Cuenta con el único museo ibérico del mundo y el único museo de arte naíf de España.',
+  'Tiene las playas de interior más numerosas de España, que representan el 35% de las zonas de baño interiores de Andalucía.',
+  'La Reserva Starlight de Cazorla es la mayor Área Starlight protegida del mundo.',
+  'Jaén alberga la mayor población de linces ibéricos salvajes del mundo.',
+  'La Batalla de Bailén fue la primera derrota militar francesa durante la conquista napoleónica.',
+  'La Catedral de Jaén es la única catedral de España con balcones que rodean todo su perímetro.',
+  'El aceite de oliva de Jaén representa el 40% de la producción nacional y entre el 20-25% de la producción mundial.',
+  'Jaén tiene la mayor densidad de bares por metro cuadrado del mundo.',
+  'El artista jiennense Raphael tiene uno de los cuatro discos de platino de la historia junto a Michael Jackson, Queen y AC/DC.',
+  'Úbeda es la segunda ciudad europea con mayor número de monumentos por metro cuadrado.',
+];
