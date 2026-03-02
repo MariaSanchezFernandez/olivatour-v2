@@ -16,7 +16,7 @@ class LugarController extends Controller
      */
     public function index()
     {
-        return response()->json(LugarInteres::all());
+        return response()->json(LugarInteres::with('logro')->get());
     }
 
     /**
@@ -140,21 +140,9 @@ class LugarController extends Controller
         if(!$poblacion)
             return response()->json(['message' => 'Población no encontrada'], 404);
 
-        $lugares = $poblacion->lugares;
+        $lugares = $poblacion->lugares()->with('logro')->get();
 
         $lugaresConImagen = $lugares->map(function ($lugar) {
-            $rutaImagen = public_path("imagenes/Medallas/{$lugar->tipo}.png");
-
-            $imagenUrl = file_exists($rutaImagen) ? url("imagenes/Medallas/{$lugar->tipo}.png") : null;
-
-            $patron = public_path("imagenes/lugaresInteres/imagenes/*{$lugar->nombreNormalizado}*");
-
-            $archivos = File::glob($patron);
-
-            $imagenes = array_map(function ($archivo) {
-                return url('imagenes/lugaresInteres/imagenes/' . basename($archivo));
-            }, $archivos);
-
             return [
                 'id' => $lugar->id,
                 'nombre' => $lugar->nombre,
@@ -163,8 +151,10 @@ class LugarController extends Controller
                 'tipo' => $lugar->tipo,
                 'latitud' => $lugar->latitud,
                 'longitud' => $lugar->longitud,
-                'imagen_medalla' => $imagenUrl,
-                'imagenes' => $imagenes
+                'poblacion_id' => $lugar->poblacion_id,
+                'imagen_medalla' => "/imagenes/Medallas/{$lugar->tipo}.png",
+                'logro' => $lugar->logro,
+                'imagenes' => [],
             ];
         });
 
