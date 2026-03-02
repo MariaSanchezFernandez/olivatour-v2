@@ -228,13 +228,13 @@ class PoblacionController extends Controller{
         $imagenes = [];
 
         foreach($poblaciones as $poblacion){
-            // Usar la primera foto asociada en la BD (ya no file_exists en el servidor)
-            $primeraFoto = $poblacion->fotos->first();
+            // imagen_escudo y escudo son campos directos del modelo (no file_exists)
+            $imagen = $poblacion->imagen_escudo ?? $poblacion->escudo ?? null;
 
             $imagenes[] = [
                 'id' => $poblacion->id,
                 'poblacion' => $poblacion->nombre,
-                'imagen' => $primeraFoto ? $primeraFoto->url : null
+                'imagen' => $imagen
             ];
         }
 

@@ -1,8 +1,8 @@
 // API base URL — Railway (solo para endpoints JSON, no para archivos estáticos)
 export const API_BASE_URL = 'https://ingenious-commitment-production.up.railway.app';
 
-// CDN para imágenes — GitHub raw CDN (los archivos están en el repo)
-export const IMAGES_BASE_URL = 'https://raw.githubusercontent.com/MariaSanchezFernandez/olivatour-v2/main/public';
+// CDN para imágenes — jsDelivr sirve archivos del repo de GitHub vía CDN global
+export const IMAGES_BASE_URL = 'https://cdn.jsdelivr.net/gh/MariaSanchezFernandez/olivatour-v2@main/public';
 
 export const MAPBOX_TOKEN = 'pk.eyJ1Ijoiam9zZWJvcnJhcyIsImEiOiJjbTlkMjNwd2kwN3p3MmpyN2I2NzBwN3J6In0.CmuXAe3kjmRUJ4pU_R5NMA';
 export const MAPBOX_STYLE = 'mapbox://styles/joseborras/cma8jmmet00gx01qodbr0075u';
