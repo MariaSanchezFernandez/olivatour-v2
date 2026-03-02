@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { LugarInteres, Logro } from '../../types';
-import { API_BASE_URL } from '../../constants/api';
+import { IMAGES_BASE_URL } from '../../constants/api';
 
 const TIPO_IMAGES: Record<string, any> = {
   calles:      require('../../assets/images/Calles.png'),
@@ -49,7 +49,7 @@ const TIPO_COLORS: Record<string, string> = {
 function getImageUri(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http')) return url;
-  return `${API_BASE_URL}${url}`;
+  return `${IMAGES_BASE_URL}${url}`;
 }
 
 interface Props {

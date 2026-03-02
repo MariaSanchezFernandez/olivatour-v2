@@ -31,8 +31,9 @@ const TIPO_LABEL: Record<string, string> = {
   otro:        'Otro',
 };
 
-// Mostrar lugares de interés a partir de este nivel de zoom
+// Mostrar lugares de interés entre estos niveles de zoom
 const MIN_ZOOM_LUGARES = 9;
+const MAX_ZOOM_MARKERS = 16; // Más allá no renderizamos markers para evitar crash por DOM
 
 export default function MapaScreen() {
   const { comarcas, lugares, userLogros, loadUserLogros } = useApp();
@@ -48,7 +49,7 @@ export default function MapaScreen() {
   const [showMedallaPopup, setShowMedallaPopup] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  const showLugares = viewState.zoom >= MIN_ZOOM_LUGARES;
+  const showLugares = viewState.zoom >= MIN_ZOOM_LUGARES && viewState.zoom <= MAX_ZOOM_MARKERS;
 
   // Cargar logros del usuario para marcar los visitados
   useEffect(() => {

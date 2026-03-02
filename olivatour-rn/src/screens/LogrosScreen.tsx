@@ -18,7 +18,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Comarca, LugarInteres, Logro, ImagenPoblacion } from '../types';
 import AppDataService from '../services/AppDataService';
-import { API_BASE_URL } from '../constants/api';
+import { IMAGES_BASE_URL } from '../constants/api';
 
 interface PorcentajeMap {
   [comarcaId: number]: number;
@@ -68,7 +68,7 @@ function getPorcentajeImage(pct: number) {
 function getImageUri(imageStr: string | null | undefined): string | null {
   if (!imageStr) return null;
   if (imageStr.startsWith('http')) return imageStr;
-  return `${API_BASE_URL}${imageStr}`;
+  return `${IMAGES_BASE_URL}${imageStr}`;
 }
 
 export default function LogrosScreen() {
