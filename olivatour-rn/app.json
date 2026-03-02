@@ -28,7 +28,14 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single",
-      "name": "OlivaTour"
+      "name": "OlivaTour",
+      "shortName": "OlivaTour",
+      "description": "Descubre las comarcas y lugares de interés de Jaén",
+      "themeColor": "#132A13",
+      "backgroundColor": "#F0F0D9",
+      "startUrl": "/",
+      "display": "standalone",
+      "orientation": "any"
     },
     "plugins": [
       "expo-font",

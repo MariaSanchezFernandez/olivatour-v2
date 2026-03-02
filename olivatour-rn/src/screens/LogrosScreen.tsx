@@ -11,6 +11,7 @@ import {
   ScrollView,
   Image,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import { useApp } from '../context/AppContext';
@@ -73,6 +74,8 @@ function getImageUri(imageStr: string | null | undefined): string | null {
 export default function LogrosScreen() {
   const { comarcas, isLoading, loadData } = useApp();
   const { userId, userToken } = useAuth();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
   const [porcentajes, setPorcentajes] = useState<PorcentajeMap>({});
 
   // Nivel 1: Comarca seleccionada → pantalla de poblaciones
@@ -290,9 +293,11 @@ export default function LogrosScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Comarcas</Text>
+      <Text style={[styles.title, isDesktop && styles.titleDesktop]}>Comarcas</Text>
 
       <FlatList
+        numColumns={isDesktop ? 2 : 1}
+        key={isDesktop ? 'desktop' : 'mobile'}
         data={comarcas}
         renderItem={renderComarca}
         keyExtractor={item => item.id.toString()}
@@ -513,6 +518,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 16,
+  },
+  titleDesktop: {
+    paddingTop: 32,
+    fontSize: 32,
   },
   list: {
     paddingHorizontal: 24,

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import { CURIOSIDADES_JAEN } from '../constants/curiosidades';
@@ -21,6 +22,8 @@ interface Props {
 export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
   const { userName } = useAuth();
   const { comarcas, isLoading, loadData } = useApp();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
   const [curiosidadIndex, setCuriosidadIndex] = useState(
     Math.floor(Math.random() * CURIOSIDADES_JAEN.length)
   );
@@ -45,7 +48,7 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
       }
     >
       {/* Saludo */}
-      <View style={styles.header}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         <Text style={styles.greeting}>¡Hola, {nombreMostrado}!</Text>
         <Text style={styles.subtitle}>
           Accede al mapa para empezar esta aventura
@@ -115,6 +118,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 20,
+  },
+  headerDesktop: {
+    paddingTop: 32,
   },
   greeting: {
     fontFamily: 'Urbanist-Bold',
