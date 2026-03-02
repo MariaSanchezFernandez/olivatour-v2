@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Alert,
   ScrollView,
   TextInput,
-  Platform,
 } from 'react-native';
 import Map, { Marker } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -46,9 +45,8 @@ export default function PerfilScreen() {
   const [editandoCodigo, setEditandoCodigo] = useState(false);
   const [mapCenter, setMapCenter] = useState(JAEN_DEFAULT);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Cargar datos persistidos
+  // Cargar foto y CP persistidos
   useEffect(() => {
     (async () => {
       const savedPhoto = await AsyncStorage.getItem(STORAGE_KEY_PHOTO);
@@ -71,30 +69,33 @@ export default function PerfilScreen() {
     }
   };
 
+  // Abrir selector de archivo de forma nativa en web (sin JSX <input>)
   const handlePickPhoto = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUri = ev.target?.result as string;
-      setPhotoUri(dataUri);
-      await AsyncStorage.setItem(STORAGE_KEY_PHOTO, dataUri);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUri = ev.target?.result as string;
+        setPhotoUri(dataUri);
+        await AsyncStorage.setItem(STORAGE_KEY_PHOTO, dataUri);
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
+    input.click();
   };
 
   const handleLogout = () => {
     Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
+      'Cerrar sesion',
+      'Estas seguro de que quieres cerrar sesion?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Cerrar sesión',
+          text: 'Cerrar sesion',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -115,7 +116,8 @@ export default function PerfilScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* ── Mapa mini + Avatar (solapado) ── */}
+
+      {/* ── Mapa centrado en el codigo postal ── */}
       <View style={styles.mapHeader}>
         <Map
           longitude={mapCenter.longitude}
@@ -132,16 +134,14 @@ export default function PerfilScreen() {
           touchZoomRotate={false}
         >
           <Marker longitude={mapCenter.longitude} latitude={mapCenter.latitude}>
-            <View style={styles.mapPin}>
-              <Text style={{ fontSize: 20 }}>📍</Text>
-            </View>
+            <View style={styles.mapPinDot} />
           </Marker>
         </Map>
 
-        {/* Overlay oscuro suave para contraste */}
-        <View style={styles.mapOverlay} pointerEvents="none" />
+        {/* Overlay oscuro tenue */}
+        <View style={styles.mapOverlay} />
 
-        {/* Avatar solapado al fondo del header */}
+        {/* Avatar solapado en la parte inferior del header */}
         <View style={styles.avatarContainer}>
           <TouchableOpacity style={styles.avatarOuter} onPress={handlePickPhoto} activeOpacity={0.85}>
             {photoUri ? (
@@ -152,27 +152,18 @@ export default function PerfilScreen() {
               </View>
             )}
             <View style={styles.avatarEditBadge}>
-              <Text style={styles.avatarEditIcon}>✏️</Text>
+              <Text style={styles.avatarEditText}>+</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Input de archivo oculto (web) */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleFileChange as any}
-      />
 
       {/* ── Datos del usuario ── */}
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{userName ?? 'Usuario'}</Text>
         <Text style={styles.userEmail}>{userEmail ?? ''}</Text>
 
-        {/* Código postal */}
+        {/* Codigo postal */}
         <View style={styles.codigoRow}>
           {editandoCodigo ? (
             <>
@@ -184,6 +175,7 @@ export default function PerfilScreen() {
                 maxLength={5}
                 autoFocus
                 placeholder="23400"
+                onSubmitEditing={handleSaveCodigo}
               />
               <TouchableOpacity onPress={handleSaveCodigo} style={styles.codigoSave}>
                 <Text style={styles.codigoSaveText}>Guardar</Text>
@@ -191,12 +183,12 @@ export default function PerfilScreen() {
             </>
           ) : (
             <TouchableOpacity onPress={() => setEditandoCodigo(true)} style={styles.codigoButton}>
-              <Text style={styles.codigoLabel}>📬 Código postal: </Text>
-              <Text style={styles.codigoValue}>{codigoPostal || '—'}</Text>
-              <Text style={styles.codigoEdit}> ✏️</Text>
+              <Text style={styles.codigoLabel}>Codigo postal: </Text>
+              <Text style={styles.codigoValue}>{codigoPostal || 'Anadir'}</Text>
             </TouchableOpacity>
           )}
         </View>
+        <Text style={styles.photoHint}>Pulsa en tu foto para cambiarla</Text>
       </View>
 
       {/* ── Comarcas exploradas ── */}
@@ -205,7 +197,7 @@ export default function PerfilScreen() {
           <Text style={styles.sectionTitle}>Comarcas exploradas</Text>
           {top3Comarcas.map((comarca: any) => (
             <View key={comarca.id} style={styles.comarcaRow}>
-              <Text style={styles.comarcaDot}>●</Text>
+              <View style={styles.comarcaDot} />
               <Text style={styles.comarcaName}>{comarca.nombre}</Text>
             </View>
           ))}
@@ -214,7 +206,7 @@ export default function PerfilScreen() {
 
       {/* ── Info de cuenta ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Información de cuenta</Text>
+        <Text style={styles.sectionTitle}>Informacion de cuenta</Text>
         <View style={styles.infoCard}>
           <Text style={styles.infoLabel}>ID de usuario</Text>
           <Text style={styles.infoValue}>#{userId ?? '—'}</Text>
@@ -225,9 +217,9 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      {/* ── Logout ── */}
+      {/* ── Cerrar sesion ── */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Cerrar sesión</Text>
+        <Text style={styles.logoutText}>Cerrar sesion</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -242,17 +234,30 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   mapHeader: {
-    height: 200,
+    height: 220,
     position: 'relative',
     overflow: 'hidden',
   },
   mapOverlay: {
     position: 'absolute',
-    inset: 0,
-    backgroundColor: 'rgba(19,42,19,0.15)',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(19,42,19,0.12)',
+    pointerEvents: 'none',
   } as any,
-  mapPin: {
-    alignItems: 'center',
+  mapPinDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.verdeSeleccionado,
+    borderWidth: 3,
+    borderColor: Colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
   },
   avatarContainer: {
     position: 'absolute',
@@ -276,11 +281,12 @@ const styles = StyleSheet.create({
     cursor: 'pointer' as any,
   },
   avatarImg: {
-    width: '100%',
-    height: '100%',
+    width: 88,
+    height: 88,
   },
   avatarInitials: {
-    flex: 1,
+    width: 88,
+    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -293,19 +299,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 4,
     right: 4,
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    width: 22,
-    height: 22,
+    backgroundColor: Colors.verdeSeleccionado,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
   },
-  avatarEditIcon: {
-    fontSize: 11,
+  avatarEditText: {
+    color: Colors.white,
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 16,
+    lineHeight: 20,
   },
   userInfo: {
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 58,
     paddingBottom: 20,
   },
   userName: {
@@ -323,6 +334,7 @@ const styles = StyleSheet.create({
   codigoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 6,
   },
   codigoButton: {
     flexDirection: 'row',
@@ -337,9 +349,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 15,
     color: Colors.verdeOscuro,
-  },
-  codigoEdit: {
-    fontSize: 14,
+    textDecorationLine: 'underline',
   },
   codigoInput: {
     borderWidth: 1,
@@ -351,8 +361,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     width: 100,
     backgroundColor: Colors.white,
-    outlineColor: Colors.verdeOscuro,
-  } as any,
+  },
   codigoSave: {
     marginLeft: 10,
     backgroundColor: Colors.verdeSeleccionado,
@@ -364,6 +373,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Bold',
     fontSize: 13,
     color: Colors.white,
+  },
+  photoHint: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 12,
+    color: Colors.grayMedium,
+    marginTop: 2,
   },
   section: {
     marginHorizontal: 24,
@@ -381,8 +396,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   comarcaDot: {
-    color: Colors.verdeClaro,
-    fontSize: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.verdeClaro,
     marginRight: 10,
   },
   comarcaName: {

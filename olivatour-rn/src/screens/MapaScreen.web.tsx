@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import Map, { Marker, NavigationControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Colors } from '../constants/colors';
@@ -7,35 +7,37 @@ import { MAPBOX_TOKEN, MAPBOX_STYLE, JAEN_CENTER, JAEN_ZOOM } from '../constants
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { LugarInteres } from '../types';
+import DetalleLugarScreen from './detail/DetalleLugarScreen';
 
-const TIPO_COLORS: Record<string, string> = {
-  castillos:  '#8B4513',
-  iglesias:   '#4A90D9',
-  monumentos: '#9B59B6',
-  museos:     '#E67E22',
-  paisajes:   '#27AE60',
-  yacimientos:'#C0392B',
-  calles:     '#7F8C8D',
-  otro:       '#95A5A6',
+const TIPO_IMAGES: Record<string, any> = {
+  calles:      require('../assets/images/Calles.png'),
+  castillos:   require('../assets/images/Castillos.png'),
+  iglesias:    require('../assets/images/Iglesias.png'),
+  monumentos:  require('../assets/images/Monumentos.png'),
+  museos:      require('../assets/images/Museos.png'),
+  paisajes:    require('../assets/images/Paisajes.png'),
+  yacimientos: require('../assets/images/Yacimientos.png'),
+  otro:        require('../assets/images/Otro.png'),
 };
 
-const TIPO_EMOJI: Record<string, string> = {
-  castillos:  '🏰',
-  iglesias:   '⛪',
-  monumentos: '🗿',
-  museos:     '🏛',
-  paisajes:   '🌿',
-  yacimientos:'⛏',
-  calles:     '🛤',
-  otro:       '📍',
+const TIPO_LABEL: Record<string, string> = {
+  castillos:   'Castillos',
+  iglesias:    'Iglesias',
+  monumentos:  'Monumentos',
+  museos:      'Museos',
+  paisajes:    'Paisajes',
+  yacimientos: 'Yacimientos',
+  calles:      'Calles',
+  otro:        'Otro',
 };
 
-// Por encima de este zoom se muestran los lugares de interés
-const MIN_ZOOM_LUGARES = 10;
+// Mostrar lugares de interés a partir de este nivel de zoom
+const MIN_ZOOM_LUGARES = 9;
 
 export default function MapaScreen() {
-  const { comarcas, lugares, userLogros, toggleVisita } = useApp();
+  const { comarcas, lugares, userLogros, loadUserLogros } = useApp();
   const { userId, userToken } = useAuth();
+  const { toggleVisita } = useApp();
 
   const [viewState, setViewState] = useState({
     longitude: JAEN_CENTER.longitude,
@@ -47,6 +49,13 @@ export default function MapaScreen() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const showLugares = viewState.zoom >= MIN_ZOOM_LUGARES;
+
+  // Cargar logros del usuario para marcar los visitados
+  useEffect(() => {
+    if (userId && userToken) {
+      loadUserLogros(userId, userToken);
+    }
+  }, [userId, userToken]);
 
   const isVisitado = (lugar: LugarInteres): boolean => {
     if (!lugar.logro) return false;
@@ -60,17 +69,6 @@ export default function MapaScreen() {
       latitude:  comarca.latitud,
       zoom:      11,
     }));
-  };
-
-  const handleToggleVisita = async () => {
-    if (!selectedLugar || !userId || !userToken || !selectedLugar.logro?.id) return;
-    setTogglingId(selectedLugar.id);
-    const success = await toggleVisita(userId, selectedLugar.logro.id, userToken);
-    setTogglingId(null);
-    if (success) {
-      setShowMedallaPopup(true);
-      setTimeout(() => setShowMedallaPopup(false), 3000);
-    }
   };
 
   const resetToJaen = () => {
@@ -92,7 +90,7 @@ export default function MapaScreen() {
       >
         <NavigationControl position="top-right" />
 
-        {/* Marcadores de comarca — visibles cuando zoom < MIN_ZOOM_LUGARES */}
+        {/* Marcadores de comarca — al hacer zoom desaparecen */}
         {!showLugares && comarcas.map(comarca => (
           <Marker
             key={`comarca-${comarca.id}`}
@@ -108,12 +106,11 @@ export default function MapaScreen() {
           </Marker>
         ))}
 
-        {/* Marcadores de lugares de interés — visibles al hacer zoom */}
+        {/* Marcadores de lugares de interes — aparecen al hacer zoom (>= 9) */}
         {showLugares && lugares.map(lugar => {
           if (!lugar.latitud || !lugar.longitud) return null;
           const visitado = isVisitado(lugar);
-          const color = TIPO_COLORS[lugar.tipo] ?? Colors.grayMedium;
-          const emoji = TIPO_EMOJI[lugar.tipo] ?? '📍';
+          const tipoImg = TIPO_IMAGES[lugar.tipo] ?? TIPO_IMAGES['otro'];
           return (
             <Marker
               key={`lugar-${lugar.id}`}
@@ -121,104 +118,66 @@ export default function MapaScreen() {
               latitude={lugar.latitud}
             >
               <TouchableOpacity
-                style={[styles.lugarMarker, { backgroundColor: color, opacity: visitado ? 0.55 : 1 }]}
+                style={[styles.lugarMarker, visitado && styles.lugarMarkerVisitado]}
                 onPress={() => setSelectedLugar(lugar)}
               >
-                <Text style={styles.lugarEmoji}>{emoji}</Text>
+                <Image source={tipoImg} style={styles.lugarIcon} resizeMode="contain" />
               </TouchableOpacity>
             </Marker>
           );
         })}
       </Map>
 
-      {/* Leyenda de tipos (visible al hacer zoom) */}
+      {/* Leyenda de tipos (solo cuando hay lugares visibles) */}
       {showLugares && (
         <View style={styles.legend}>
-          {Object.entries(TIPO_EMOJI).map(([tipo, emoji]) => (
+          {Object.entries(TIPO_LABEL).map(([tipo, label]) => (
             <View key={tipo} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: TIPO_COLORS[tipo] }]} />
-              <Text style={styles.legendText}>{emoji} {tipo}</Text>
+              <Text style={styles.legendText}>{label}</Text>
             </View>
           ))}
         </View>
       )}
 
-      {/* Pista de zoom */}
+      {/* Pista de zoom cuando el usuario no ha hecho zoom */}
       {!showLugares && (
         <View style={styles.zoomHint}>
-          <Text style={styles.zoomHintText}>🔍 Haz zoom para ver los lugares de interés</Text>
+          <Text style={styles.zoomHintText}>Acerca el mapa para ver los lugares de interes</Text>
         </View>
       )}
 
-      {/* Botón volver a Jaén */}
+      {/* Boton volver a Jaen */}
       <TouchableOpacity style={styles.resetButton} onPress={resetToJaen}>
-        <Text style={styles.resetButtonText}>🗺 Jaén</Text>
+        <Text style={styles.resetButtonText}>Volver a Jaen</Text>
       </TouchableOpacity>
 
-      {/* Popup medalla */}
+      {/* Popup lugar visitado */}
       {showMedallaPopup && (
         <View style={styles.medallaPopup}>
-          <Text style={styles.medallaText}>🏅 ¡Lugar visitado! Has ganado una medalla</Text>
+          <Text style={styles.medallaText}>Lugar visitado - has ganado una medalla</Text>
         </View>
       )}
 
-      {/* Bottom sheet — detalle lugar */}
-      <Modal
-        visible={!!selectedLugar}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setSelectedLugar(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedLugar(null)}>
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
-            {selectedLugar && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={styles.tipoTagContainer}>
-                  <View style={[styles.tipoTag, { backgroundColor: TIPO_COLORS[selectedLugar.tipo] ?? Colors.grayMedium }]}>
-                    <Text style={styles.tipoTagText}>
-                      {TIPO_EMOJI[selectedLugar.tipo]} {selectedLugar.tipo}
-                    </Text>
-                  </View>
-                  {isVisitado(selectedLugar) && (
-                    <View style={styles.visitadoBadge}>
-                      <Text style={styles.visitadoBadgeText}>✓ Visitado</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.modalTitle}>{selectedLugar.nombre}</Text>
-                {selectedLugar.descripcionUno ? (
-                  <Text style={styles.modalDesc}>{selectedLugar.descripcionUno}</Text>
-                ) : null}
-                {selectedLugar.descripcionDos ? (
-                  <Text style={styles.modalDesc}>{selectedLugar.descripcionDos}</Text>
-                ) : null}
-                <Text style={styles.modalCoords}>
-                  📍 {selectedLugar.latitud?.toFixed(5)}, {selectedLugar.longitud?.toFixed(5)}
-                </Text>
-                {selectedLugar.logro && (
-                  <TouchableOpacity
-                    style={[styles.visitarButton, isVisitado(selectedLugar) && styles.visitarButtonDone]}
-                    onPress={handleToggleVisita}
-                    disabled={togglingId === selectedLugar.id}
-                  >
-                    <Text style={styles.visitarText}>
-                      {togglingId === selectedLugar.id
-                        ? '...'
-                        : isVisitado(selectedLugar)
-                          ? '✓ Visitado — quitar marca'
-                          : '📍 Marcar como visitado'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
+      {/* Pantalla de detalle del lugar de interes */}
+      {selectedLugar && (
+        <DetalleLugarScreen
+          lugar={selectedLugar}
+          userLogros={userLogros}
+          visible={!!selectedLugar}
+          onClose={() => setSelectedLugar(null)}
+          onToggleVisita={async (lugar) => {
+            if (!userId || !userToken || !lugar.logro?.id) return;
+            setTogglingId(lugar.id);
+            const success = await toggleVisita(userId, lugar.logro.id, userToken);
+            setTogglingId(null);
+            if (success) {
+              setShowMedallaPopup(true);
+              setTimeout(() => setShowMedallaPopup(false), 3000);
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -244,30 +203,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   lugarMarker: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.white,
+    borderColor: Colors.verdeOscuro,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
-    shadowRadius: 4,
+    shadowRadius: 3,
     cursor: 'pointer' as any,
   },
-  lugarEmoji: {
-    fontSize: 14,
+  lugarMarkerVisitado: {
+    opacity: 0.5,
+    borderColor: Colors.grayMedium,
+  },
+  lugarIcon: {
+    width: 22,
+    height: 22,
   },
   legend: {
     position: 'absolute',
     bottom: 80,
     left: 16,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.93)',
     borderRadius: 12,
     padding: 10,
     gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   legendItem: {
     flexDirection: 'row',
@@ -283,16 +252,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Regular',
     fontSize: 11,
     color: Colors.grayDark,
-    textTransform: 'capitalize',
   },
   zoomHint: {
     position: 'absolute',
     bottom: 80,
     left: 16,
-    backgroundColor: 'rgba(255,255,255,0.88)',
+    right: 100,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   zoomHintText: {
     fontFamily: 'Urbanist-Regular',
@@ -333,101 +306,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.white,
     textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '70%',
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.nuevoVerde,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    padding: 8,
-  },
-  closeText: {
-    fontSize: 18,
-    color: Colors.grayDark,
-  },
-  tipoTagContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-    flexWrap: 'wrap',
-  },
-  tipoTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  tipoTagText: {
-    fontFamily: 'Urbanist-Medium',
-    fontSize: 12,
-    color: Colors.white,
-    textTransform: 'capitalize',
-  },
-  visitadoBadge: {
-    backgroundColor: Colors.verdeSeleccionado,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  visitadoBadgeText: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 12,
-    color: Colors.white,
-  },
-  modalTitle: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 22,
-    color: Colors.verdeOscuro,
-    marginBottom: 10,
-    paddingRight: 30,
-  },
-  modalDesc: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 15,
-    color: Colors.grayDark,
-    lineHeight: 24,
-    marginBottom: 10,
-  },
-  modalCoords: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 13,
-    color: Colors.grayMedium,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  visitarButton: {
-    backgroundColor: Colors.verdeSeleccionado,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  visitarButtonDone: {
-    backgroundColor: Colors.grayMedium,
-  },
-  visitarText: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 16,
-    color: Colors.white,
   },
 });

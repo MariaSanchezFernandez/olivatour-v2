@@ -134,7 +134,8 @@ function MainApp() {
         <StatusBar barStyle="light-content" backgroundColor={Colors.verdeSeleccionado} />
         <Sidebar activeTab={currentTab} onTabPress={setCurrentTab} />
         <View style={styles.desktopMain}>
-          <View style={styles.desktopContent}>
+          {/* El mapa ocupa el 100% del ancho disponible sin restriccion */}
+          <View style={[styles.desktopContent, currentTab === 2 && styles.desktopContentFull]}>
             {screens}
           </View>
         </View>
@@ -268,6 +269,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     maxWidth: 1000,
+  },
+  desktopContentFull: {
+    maxWidth: 99999,
   },
   loadingContainer: {
     flex: 1,
