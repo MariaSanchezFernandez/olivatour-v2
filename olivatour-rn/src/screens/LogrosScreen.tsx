@@ -238,9 +238,7 @@ export default function LogrosScreen() {
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.poblacionImage} resizeMode="cover" />
         ) : (
-          <View style={[styles.poblacionImage, styles.poblacionImagePlaceholder]}>
-            <Text style={styles.poblacionImageEmoji}>🏘️</Text>
-          </View>
+          <View style={[styles.poblacionImage, styles.poblacionImagePlaceholder]} />
         )}
         <View style={styles.poblacionNameContainer}>
           <Text style={styles.poblacionName} numberOfLines={2}>
@@ -270,9 +268,7 @@ export default function LogrosScreen() {
             <Image source={tipoImg} style={styles.medallaImage} resizeMode="contain" />
           )}
           {visitado && (
-            <View style={styles.medallaCheck}>
-              <Text style={styles.medallaCheckText}>✓</Text>
-            </View>
+            <View style={styles.medallaCheck} />
           )}
         </View>
         <Text style={styles.medallaNombre} numberOfLines={2}>
@@ -427,7 +423,7 @@ export default function LogrosScreen() {
                   style={styles.detalleClose}
                   onPress={() => setSelectedLugar(null)}
                 >
-                  <Text style={styles.detalleCloseText}>✕</Text>
+                  <Text style={styles.detalleCloseText}>X</Text>
                 </TouchableOpacity>
 
                 {selectedLugar && (
@@ -479,8 +475,8 @@ export default function LogrosScreen() {
                       >
                         <Text style={styles.toggleButtonText}>
                           {isLugarVisitado(selectedLugar)
-                            ? '✓ Visitado — Quitar'
-                            : '+ Marcar como visitado'}
+                            ? 'Visitado — Quitar'
+                            : 'Marcar como visitado'}
                         </Text>
                       </TouchableOpacity>
                     ) : null}
@@ -495,8 +491,7 @@ export default function LogrosScreen() {
       {/* ── Popup: Medalla ganada ── */}
       {medallaGanada && (
         <Animated.View style={[styles.medallaGanadaPopup, { opacity: medallaOpacity }]}>
-          <Text style={styles.medallaGanadaEmoji}>🏅</Text>
-          <Text style={styles.medallaGanadaTitulo}>¡Medalla conseguida!</Text>
+          <Text style={styles.medallaGanadaTitulo}>Medalla conseguida</Text>
           <Text style={styles.medallaGanadaNombre} numberOfLines={2}>
             {medallaGanada.nombre}
           </Text>
@@ -680,7 +675,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   medallaNoVisitada: {
-    opacity: 0.35,
+    opacity: 0.6,
+    filter: 'grayscale(100%)' as any,
   },
   medallaImage: {
     width: 56,

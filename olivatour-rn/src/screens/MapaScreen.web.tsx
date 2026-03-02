@@ -31,6 +31,17 @@ const TIPO_LABEL: Record<string, string> = {
   otro:        'Otro',
 };
 
+const TIPO_COLORS: Record<string, string> = {
+  castillos:   '#8B4513',
+  iglesias:    '#4A90D9',
+  monumentos:  '#9B59B6',
+  museos:      '#E67E22',
+  paisajes:    '#27AE60',
+  yacimientos: '#C0392B',
+  calles:      '#7F8C8D',
+  otro:        '#95A5A6',
+};
+
 // Mostrar lugares de interés entre estos niveles de zoom
 const MIN_ZOOM_LUGARES = 9;
 const MAX_ZOOM_MARKERS = 16; // Más allá no renderizamos markers para evitar crash por DOM
@@ -88,6 +99,8 @@ export default function MapaScreen() {
         style={{ width: '100%', height: '100%' } as any}
         mapStyle={MAPBOX_STYLE}
         mapboxAccessToken={MAPBOX_TOKEN}
+        minZoom={6}
+        maxZoom={17}
       >
         <NavigationControl position="top-right" />
 
@@ -204,27 +217,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   lugarMarker: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.verdeOscuro,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
     cursor: 'pointer' as any,
   },
   lugarMarkerVisitado: {
-    opacity: 0.5,
-    borderColor: Colors.grayMedium,
+    opacity: 0.4,
   },
   lugarIcon: {
-    width: 22,
-    height: 22,
+    width: 32,
+    height: 32,
   },
   legend: {
     position: 'absolute',
