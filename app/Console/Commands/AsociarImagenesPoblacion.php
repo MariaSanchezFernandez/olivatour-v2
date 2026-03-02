@@ -139,8 +139,8 @@ class AsociarImagenesPoblacion extends Command
     $nombreNormalizado = $this->normalizarNombre($nombre);
 
     return Poblacion::all()->first(function ($poblacion) use ($nombreNormalizado) {
-        // Ahora ambos lados están normalizados
-        return $this->normalizarNombre($poblacion->nombre) === $nombreNormalizado;
+        // Comparación case-insensitive para cubrir camelCase ya normalizado en el nombre del archivo
+        return strcasecmp($this->normalizarNombre($poblacion->nombre), $nombreNormalizado) === 0;
     });
 }
 
