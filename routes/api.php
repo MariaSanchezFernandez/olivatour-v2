@@ -37,6 +37,9 @@ Route::get('comarcas/{param}/logros', [ComarcaController::class, 'getLogrosByCom
 // obtener porcentaje de la comarca
 Route::get('/comarcas/{comarcaId}/porcentaje/{usuarioId}', [ComarcaController::class, 'getPorcentajeComarca']);
 
+// todos los lugares de interes de una comarca (todas sus poblaciones)
+Route::get('/comarcas/{id}/lugares', [LugarController::class, 'showLugaresByComarca']);
+
 // imagenes de todas las comarcas
 Route::get('/imagenes/comarcas', [ComarcaController::class, 'getComarcasImagenes']);
 

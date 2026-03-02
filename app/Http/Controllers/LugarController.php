@@ -137,28 +137,56 @@ class LugarController extends Controller
             ->orWhere('nombre', $param)
             ->first();
 
-        if(!$poblacion)
+        if (!$poblacion) {
             return response()->json(['message' => 'Población no encontrada'], 404);
+        }
 
         $lugares = $poblacion->lugares()->with('logro')->get();
 
-        $lugaresConImagen = $lugares->map(function ($lugar) {
+        $result = $lugares->map(function ($lugar) {
             return [
-                'id' => $lugar->id,
-                'nombre' => $lugar->nombre,
+                'id'             => $lugar->id,
+                'nombre'         => $lugar->nombre,
                 'descripcionUno' => $lugar->descripcionUno,
                 'descripcionDos' => $lugar->descripcionDos,
-                'tipo' => $lugar->tipo,
-                'latitud' => $lugar->latitud,
-                'longitud' => $lugar->longitud,
-                'poblacion_id' => $lugar->poblacion_id,
+                'tipo'           => $lugar->tipo,
+                'latitud'        => $lugar->latitud,
+                'longitud'       => $lugar->longitud,
+                'poblacion_id'   => $lugar->poblacion_id,
                 'imagen_medalla' => "/imagenes/Medallas/{$lugar->tipo}.png",
-                'logro' => $lugar->logro,
-                'imagenes' => [],
+                'logro'          => $lugar->logro,
             ];
         });
 
-        return response()->json($lugaresConImagen);
+        return response()->json($result);
+    }
+
+    public function showLugaresByComarca($comarcaId)
+    {
+        $lugares = LugarInteres::whereHas('poblacion', function ($q) use ($comarcaId) {
+            $q->where('comarca_id', $comarcaId);
+        })
+        ->with(['logro', 'poblacion'])
+        ->orderBy('poblacion_id')
+        ->get();
+
+        $result = $lugares->map(function ($lugar) {
+            return [
+                'id'               => $lugar->id,
+                'nombre'           => $lugar->nombre,
+                'descripcionUno'   => $lugar->descripcionUno,
+                'descripcionDos'   => $lugar->descripcionDos,
+                'tipo'             => $lugar->tipo,
+                'latitud'          => $lugar->latitud,
+                'longitud'         => $lugar->longitud,
+                'poblacion_id'     => $lugar->poblacion_id,
+                'poblacion_nombre' => $lugar->poblacion?->nombre,
+                'imagen_medalla'   => "/imagenes/Medallas/{$lugar->tipo}.png",
+                'logro'            => $lugar->logro,
+            ];
+        });
+
+        return response()->json($result);
     }
 
     function normalizarNombre($cadena) {
