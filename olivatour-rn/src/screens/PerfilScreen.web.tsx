@@ -1,0 +1,430 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ScrollView,
+  TextInput,
+  Platform,
+} from 'react-native';
+import Map, { Marker } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import UserService from '../services/UserService';
+import { MAPBOX_TOKEN, MAPBOX_STYLE } from '../constants/api';
+
+const JAEN_DEFAULT = { longitude: -3.7849, latitude: 37.7796 };
+const STORAGE_KEY_PHOTO = 'olivatour_profile_photo';
+const STORAGE_KEY_CP = 'olivatour_codigo_postal';
+
+async function geocodePostalCode(cp: string): Promise<{ lng: number; lat: number } | null> {
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(cp)}.json?country=ES&types=postcode&access_token=${MAPBOX_TOKEN}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const feature = data.features?.[0];
+    if (!feature) return null;
+    const [lng, lat] = feature.center;
+    return { lng, lat };
+  } catch {
+    return null;
+  }
+}
+
+export default function PerfilScreen() {
+  const { userName, userEmail, userId, userToken, logout } = useAuth();
+  const { comarcas } = useApp();
+
+  const [codigoPostal, setCodigoPostal] = useState('');
+  const [editandoCodigo, setEditandoCodigo] = useState(false);
+  const [mapCenter, setMapCenter] = useState(JAEN_DEFAULT);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Cargar datos persistidos
+  useEffect(() => {
+    (async () => {
+      const savedPhoto = await AsyncStorage.getItem(STORAGE_KEY_PHOTO);
+      const savedCp = await AsyncStorage.getItem(STORAGE_KEY_CP);
+      if (savedPhoto) setPhotoUri(savedPhoto);
+      if (savedCp) {
+        setCodigoPostal(savedCp);
+        const coords = await geocodePostalCode(savedCp);
+        if (coords) setMapCenter({ longitude: coords.lng, latitude: coords.lat });
+      }
+    })();
+  }, []);
+
+  const handleSaveCodigo = async () => {
+    setEditandoCodigo(false);
+    if (codigoPostal.length === 5) {
+      await AsyncStorage.setItem(STORAGE_KEY_CP, codigoPostal);
+      const coords = await geocodePostalCode(codigoPostal);
+      if (coords) setMapCenter({ longitude: coords.lng, latitude: coords.lat });
+    }
+  };
+
+  const handlePickPhoto = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUri = ev.target?.result as string;
+      setPhotoUri(dataUri);
+      await AsyncStorage.setItem(STORAGE_KEY_PHOTO, dataUri);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (userToken) await UserService.logoutUser(userToken);
+            } catch {}
+            await logout();
+          },
+        },
+      ]
+    );
+  };
+
+  const initials = userName
+    ? userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
+  const top3Comarcas = comarcas.slice(0, 3);
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* ── Mapa mini + Avatar (solapado) ── */}
+      <View style={styles.mapHeader}>
+        <Map
+          longitude={mapCenter.longitude}
+          latitude={mapCenter.latitude}
+          zoom={12}
+          style={{ width: '100%', height: '100%' } as any}
+          mapStyle={MAPBOX_STYLE}
+          mapboxAccessToken={MAPBOX_TOKEN}
+          scrollZoom={false}
+          dragPan={false}
+          dragRotate={false}
+          keyboard={false}
+          doubleClickZoom={false}
+          touchZoomRotate={false}
+        >
+          <Marker longitude={mapCenter.longitude} latitude={mapCenter.latitude}>
+            <View style={styles.mapPin}>
+              <Text style={{ fontSize: 20 }}>📍</Text>
+            </View>
+          </Marker>
+        </Map>
+
+        {/* Overlay oscuro suave para contraste */}
+        <View style={styles.mapOverlay} pointerEvents="none" />
+
+        {/* Avatar solapado al fondo del header */}
+        <View style={styles.avatarContainer}>
+          <TouchableOpacity style={styles.avatarOuter} onPress={handlePickPhoto} activeOpacity={0.85}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.avatarImg} />
+            ) : (
+              <View style={styles.avatarInitials}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              <Text style={styles.avatarEditIcon}>✏️</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Input de archivo oculto (web) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileChange as any}
+      />
+
+      {/* ── Datos del usuario ── */}
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{userName ?? 'Usuario'}</Text>
+        <Text style={styles.userEmail}>{userEmail ?? ''}</Text>
+
+        {/* Código postal */}
+        <View style={styles.codigoRow}>
+          {editandoCodigo ? (
+            <>
+              <TextInput
+                style={styles.codigoInput}
+                value={codigoPostal}
+                onChangeText={setCodigoPostal}
+                keyboardType="numeric"
+                maxLength={5}
+                autoFocus
+                placeholder="23400"
+              />
+              <TouchableOpacity onPress={handleSaveCodigo} style={styles.codigoSave}>
+                <Text style={styles.codigoSaveText}>Guardar</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity onPress={() => setEditandoCodigo(true)} style={styles.codigoButton}>
+              <Text style={styles.codigoLabel}>📬 Código postal: </Text>
+              <Text style={styles.codigoValue}>{codigoPostal || '—'}</Text>
+              <Text style={styles.codigoEdit}> ✏️</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* ── Comarcas exploradas ── */}
+      {top3Comarcas.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Comarcas exploradas</Text>
+          {top3Comarcas.map((comarca: any) => (
+            <View key={comarca.id} style={styles.comarcaRow}>
+              <Text style={styles.comarcaDot}>●</Text>
+              <Text style={styles.comarcaName}>{comarca.nombre}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* ── Info de cuenta ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Información de cuenta</Text>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>ID de usuario</Text>
+          <Text style={styles.infoValue}>#{userId ?? '—'}</Text>
+        </View>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Email</Text>
+          <Text style={styles.infoValue}>{userEmail ?? '—'}</Text>
+        </View>
+      </View>
+
+      {/* ── Logout ── */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Cerrar sesión</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.verdeFondo,
+  },
+  content: {
+    paddingBottom: 60,
+  },
+  mapHeader: {
+    height: 200,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  mapOverlay: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(19,42,19,0.15)',
+  } as any,
+  mapPin: {
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'absolute',
+    bottom: -40,
+    left: 24,
+    zIndex: 10,
+  },
+  avatarOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 4,
+    borderColor: Colors.white,
+    overflow: 'hidden',
+    backgroundColor: Colors.verdeOscuro,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+    cursor: 'pointer' as any,
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarInitials: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 30,
+    color: Colors.white,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEditIcon: {
+    fontSize: 11,
+  },
+  userInfo: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  userName: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 24,
+    color: Colors.verdeOscuro,
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 16,
+    color: Colors.grayDark,
+    marginBottom: 12,
+  },
+  codigoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  codigoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  codigoLabel: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    color: Colors.grayDark,
+  },
+  codigoValue: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 15,
+    color: Colors.verdeOscuro,
+  },
+  codigoEdit: {
+    fontSize: 14,
+  },
+  codigoInput: {
+    borderWidth: 1,
+    borderColor: Colors.verdeOscuro,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    width: 100,
+    backgroundColor: Colors.white,
+    outlineColor: Colors.verdeOscuro,
+  } as any,
+  codigoSave: {
+    marginLeft: 10,
+    backgroundColor: Colors.verdeSeleccionado,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  codigoSaveText: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 13,
+    color: Colors.white,
+  },
+  section: {
+    marginHorizontal: 24,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 18,
+    color: Colors.verdeOscuro,
+    marginBottom: 12,
+  },
+  comarcaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  comarcaDot: {
+    color: Colors.verdeClaro,
+    fontSize: 12,
+    marginRight: 10,
+  },
+  comarcaName: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    color: Colors.grayDark,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  infoLabel: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    color: Colors.grayDark,
+  },
+  infoValue: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 15,
+    color: Colors.verdeOscuro,
+  },
+  logoutButton: {
+    marginHorizontal: 24,
+    marginTop: 10,
+    backgroundColor: Colors.error,
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  logoutText: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 16,
+    color: Colors.white,
+  },
+});
