@@ -228,8 +228,9 @@ class PoblacionController extends Controller{
         $imagenes = [];
 
         foreach($poblaciones as $poblacion){
-            // imagen_escudo y escudo son campos directos del modelo (no file_exists)
-            $imagen = $poblacion->imagen_escudo ?? $poblacion->escudo ?? null;
+            // Prefer DB field (populated by migration), fallback to CDN path derived from nombreNormalizado
+            $escudoFallback = '/imagenes/poblacion/escudos/Escudo' . ucfirst($poblacion->nombreNormalizado ?? '') . '.png';
+            $imagen = $poblacion->imagen_escudo ?? $poblacion->escudo ?? $escudoFallback;
 
             $imagenes[] = [
                 'id' => $poblacion->id,
