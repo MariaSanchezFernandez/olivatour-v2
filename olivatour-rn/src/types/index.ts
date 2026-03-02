@@ -81,6 +81,7 @@ export interface LugarInteres {
   viewport_sw_lng?: number;
   poblacion_id: number;
   poblacion?: Poblacion;
+  poblacion_nombre?: string;
   fotos?: Foto[];
   logro?: Logro;
   imagen_medalla?: string;

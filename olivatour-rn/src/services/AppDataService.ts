@@ -36,6 +36,14 @@ class AppDataService {
     return response.json();
   }
 
+  async fetchLugaresPorComarca(comarcaId: number): Promise<LugarInteres[]> {
+    const response = await fetch(`${API_BASE_URL}${ENDPOINTS.lugaresPorComarca(comarcaId)}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!response.ok) throw new Error('Error al obtener lugares de la comarca');
+    return response.json();
+  }
+
   async fetchLugaresPorPoblacion(poblacionId: number): Promise<LugarInteres[]> {
     const response = await fetch(`${API_BASE_URL}${ENDPOINTS.lugaresPorPoblacion(poblacionId)}`, {
       headers: { 'Accept': 'application/json' },

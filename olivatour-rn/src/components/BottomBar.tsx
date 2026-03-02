@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { Colors } from '../constants/colors';
 
 interface Props {
@@ -7,79 +8,143 @@ interface Props {
   onTabPress: (tab: number) => void;
 }
 
-// Iconos unicode que replican los SF Symbols del iOS original
-const ICONS = ['⭐', '🏠', '🗺', '👤'];
-const ICONS_ACTIVE = ['⭐', '🏠', '🗺', '👤'];
+const ACTIVE = Colors.verdeOscuro;
+const INACTIVE = '#9E9E9E';
+
+function IconLogros({ active }: { active: boolean }) {
+  const c = active ? ACTIVE : INACTIVE;
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26Z"
+        fill={active ? c : 'none'}
+        stroke={c}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function IconInicio({ active }: { active: boolean }) {
+  const c = active ? ACTIVE : INACTIVE;
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
+        fill={active ? c : 'none'}
+        stroke={c}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function IconMapa({ active }: { active: boolean }) {
+  const c = active ? ACTIVE : INACTIVE;
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 4L3 7V20L9 17L15 20L21 17V4L15 7L9 4Z"
+        stroke={c}
+        fill={active ? c + '22' : 'none'}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+      <Path d="M9 4V17" stroke={c} strokeWidth={1.4} />
+      <Path d="M15 7V20" stroke={c} strokeWidth={1.4} />
+    </Svg>
+  );
+}
+
+function IconPerfil({ active }: { active: boolean }) {
+  const c = active ? ACTIVE : INACTIVE;
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx={12} cy={8} r={4}
+        fill={active ? c : 'none'}
+        stroke={c}
+        strokeWidth={1.8}
+      />
+      <Path
+        d="M4 20C4 16.69 7.58 14 12 14C16.42 14 20 16.69 20 20"
+        stroke={c}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+const TABS = [
+  { label: 'Comarcas', Icon: IconLogros },
+  { label: 'Inicio',   Icon: IconInicio },
+  { label: 'Mapa',     Icon: IconMapa },
+  { label: 'Perfil',   Icon: IconPerfil },
+];
 
 export default function BottomBar({ activeTab, onTabPress }: Props) {
   return (
     <View style={styles.wrapper}>
-      <View style={styles.pill}>
-        {ICONS.map((icon, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabButton}
-            onPress={() => onTabPress(index)}
-            activeOpacity={0.7}
-          >
-            {activeTab === index ? (
-              <View style={styles.activeCircle}>
-                <Text style={styles.activeIcon}>{ICONS_ACTIVE[index]}</Text>
-              </View>
-            ) : (
-              <Text style={styles.inactiveIcon}>{icon}</Text>
-            )}
-          </TouchableOpacity>
-        ))}
+      <View style={styles.bar}>
+        {TABS.map((tab, index) => {
+          const active = activeTab === index;
+          return (
+            <TouchableOpacity
+              key={index}
+              style={styles.tab}
+              onPress={() => onTabPress(index)}
+              activeOpacity={0.7}
+            >
+              <tab.Icon active={active} />
+              <Text style={[styles.label, active && styles.labelActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
+      <View style={styles.safeArea} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: 30,
-    paddingBottom: 20,
-    paddingTop: 8,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.18)',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+    } as any : {}),
   },
-  pill: {
-    backgroundColor: Colors.verdeOscuro,
-    borderRadius: 30,
-    height: 70,
+  bar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    height: 56,
   },
-  tabButton: {
+  tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 60,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 3,
   },
-  activeCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+  label: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 10,
+    color: INACTIVE,
   },
-  activeIcon: {
-    fontSize: 22,
+  labelActive: {
+    fontFamily: 'Urbanist-SemiBold',
+    color: ACTIVE,
   },
-  inactiveIcon: {
-    fontSize: 22,
-    opacity: 0.85,
+  safeArea: {
+    ...(Platform.OS === 'web' ? {
+      height: 'env(safe-area-inset-bottom)',
+    } as any : { height: 0 }),
   },
 });

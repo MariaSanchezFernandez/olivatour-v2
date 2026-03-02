@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
 import { Colors } from '../constants/colors';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Comarca, LugarInteres, Logro, ImagenPoblacion } from '../types';
+import { Comarca, LugarInteres, Logro } from '../types';
 import AppDataService from '../services/AppDataService';
 import { IMAGES_BASE_URL } from '../constants/api';
 
@@ -25,40 +25,44 @@ interface PorcentajeMap {
 }
 
 const PERCENTAGE_IMAGES: { [key: number]: any } = {
-  0: require('../assets/images/0.png'),
-  10: require('../assets/images/10.png'),
-  20: require('../assets/images/20.png'),
-  30: require('../assets/images/30.png'),
-  40: require('../assets/images/40.png'),
-  50: require('../assets/images/50.png'),
-  60: require('../assets/images/60.png'),
-  70: require('../assets/images/70.png'),
-  80: require('../assets/images/80.png'),
-  90: require('../assets/images/90.png'),
+  0:   require('../assets/images/0.png'),
+  10:  require('../assets/images/10.png'),
+  20:  require('../assets/images/20.png'),
+  30:  require('../assets/images/30.png'),
+  40:  require('../assets/images/40.png'),
+  50:  require('../assets/images/50.png'),
+  60:  require('../assets/images/60.png'),
+  70:  require('../assets/images/70.png'),
+  80:  require('../assets/images/80.png'),
+  90:  require('../assets/images/90.png'),
   100: require('../assets/images/100.png'),
 };
 
 const TIPO_IMAGES: { [key: string]: any } = {
-  calles: require('../assets/images/Calles.png'),
-  castillos: require('../assets/images/Castillos.png'),
-  iglesias: require('../assets/images/Iglesias.png'),
-  monumentos: require('../assets/images/Monumentos.png'),
-  museos: require('../assets/images/Museos.png'),
-  paisajes: require('../assets/images/Paisajes.png'),
+  calles:      require('../assets/images/Calles.png'),
+  castillos:   require('../assets/images/Castillos.png'),
+  iglesias:    require('../assets/images/Iglesias.png'),
+  monumentos:  require('../assets/images/Monumentos.png'),
+  museos:      require('../assets/images/Museos.png'),
+  paisajes:    require('../assets/images/Paisajes.png'),
   yacimientos: require('../assets/images/Yacimientos.png'),
-  otro: require('../assets/images/Otro.png'),
+  otro:        require('../assets/images/Otro.png'),
 };
 
 const TIPO_LABEL: { [key: string]: string } = {
-  calles: 'Calles',
-  castillos: 'Castillos',
-  iglesias: 'Iglesias',
-  monumentos: 'Monumentos',
-  museos: 'Museos',
-  paisajes: 'Paisajes',
+  calles:      'Calles',
+  castillos:   'Castillos',
+  iglesias:    'Iglesias',
+  monumentos:  'Monumentos',
+  museos:      'Museos',
+  paisajes:    'Paisajes',
   yacimientos: 'Yacimientos',
-  otro: 'Otro',
+  otro:        'Otro',
 };
+
+type SectionItem =
+  | { type: 'header'; title: string; key: string }
+  | { type: 'row'; items: LugarInteres[]; key: string };
 
 function getPorcentajeImage(pct: number) {
   const rounded = Math.floor(pct / 10) * 10;
@@ -78,18 +82,13 @@ export default function LogrosScreen() {
   const isDesktop = width >= 768;
   const [porcentajes, setPorcentajes] = useState<PorcentajeMap>({});
 
-  // Nivel 1: Comarca seleccionada → pantalla de poblaciones
+  // Comarca seleccionada → modal de medallas
   const [selectedComarca, setSelectedComarca] = useState<Comarca | null>(null);
-  const [imagenesPoblaciones, setImagenesPoblaciones] = useState<ImagenPoblacion[]>([]);
-  const [loadingPoblaciones, setLoadingPoblaciones] = useState(false);
-
-  // Nivel 2: Poblacion seleccionada → pantalla de medallas
-  const [selectedPoblacion, setSelectedPoblacion] = useState<ImagenPoblacion | null>(null);
-  const [lugaresPoblacion, setLugaresPoblacion] = useState<LugarInteres[]>([]);
+  const [lugaresComarca, setLugaresComarca] = useState<LugarInteres[]>([]);
   const [userLogros, setUserLogros] = useState<Logro[]>([]);
   const [loadingLugares, setLoadingLugares] = useState(false);
 
-  // Nivel 3: Lugar seleccionado → popup detalle
+  // Lugar seleccionado → popup detalle
   const [selectedLugar, setSelectedLugar] = useState<LugarInteres | null>(null);
 
   // Popup medalla ganada
@@ -128,48 +127,30 @@ export default function LogrosScreen() {
     setPorcentajes(results);
   };
 
-  // Abrir pantalla de poblaciones de una comarca
   const handleComarcaPress = async (comarca: Comarca) => {
     setSelectedComarca(comarca);
-    setLoadingPoblaciones(true);
-    setImagenesPoblaciones([]);
-    try {
-      const data = await AppDataService.fetchImagenesPoblaciones(comarca.id);
-      setImagenesPoblaciones(data);
-    } catch {
-      setImagenesPoblaciones([]);
-    } finally {
-      setLoadingPoblaciones(false);
-    }
-  };
-
-  // Abrir pantalla de medallas de una poblacion
-  const handlePoblacionPress = async (poblacion: ImagenPoblacion) => {
-    setSelectedPoblacion(poblacion);
     setLoadingLugares(true);
-    setLugaresPoblacion([]);
+    setLugaresComarca([]);
     try {
       const [lugares, logros] = await Promise.all([
-        AppDataService.fetchLugaresPorPoblacion(poblacion.id),
+        AppDataService.fetchLugaresPorComarca(comarca.id),
         userId && userToken
           ? AppDataService.fetchUserLogros(userId, userToken)
           : Promise.resolve([]),
       ]);
       setUserLogros(logros);
-      setLugaresPoblacion(lugares);
+      setLugaresComarca(lugares);
     } catch {
-      setLugaresPoblacion([]);
+      setLugaresComarca([]);
     } finally {
       setLoadingLugares(false);
     }
   };
 
   const isLugarVisitado = (lugar: LugarInteres): boolean => {
-    // Comprobar por logro.id del lugar vs IDs de logros del usuario
     if (lugar.logro?.id) {
       return userLogros.some(l => l.id === lugar.logro!.id);
     }
-    // Fallback: comprobar por logroable_id
     return userLogros.some(
       l => (l.logroable_type || '').includes('LugarInteres') && l.logroable_id === lugar.id
     );
@@ -180,7 +161,6 @@ export default function LogrosScreen() {
 
     const wasVisited = isLugarVisitado(lugar);
 
-    // Optimistic update
     if (!wasVisited) {
       setUserLogros(prev => [
         ...prev,
@@ -195,7 +175,6 @@ export default function LogrosScreen() {
       await AppDataService.toggleLogro(userId, lugar.logro.id, userToken);
       fetchPorcentajes();
     } catch {
-      // Revert on error
       if (!wasVisited) {
         setUserLogros(prev => prev.filter(l => l.id !== lugar.logro!.id));
       } else {
@@ -204,7 +183,25 @@ export default function LogrosScreen() {
     }
   };
 
-  // ─── Render: lista de comarcas ────────────────────────────────────────────
+  // Agrupa las medallas por pueblo en filas de 3
+  const sectionData = useMemo((): SectionItem[] => {
+    const map = new Map<string, LugarInteres[]>();
+    lugaresComarca.forEach(lugar => {
+      const key = lugar.poblacion_nombre ?? 'Sin pueblo';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(lugar);
+    });
+    const result: SectionItem[] = [];
+    map.forEach((items, title) => {
+      result.push({ type: 'header', title, key: `h-${title}` });
+      for (let i = 0; i < items.length; i += 3) {
+        result.push({ type: 'row', items: items.slice(i, i + 3), key: `r-${title}-${i}` });
+      }
+    });
+    return result;
+  }, [lugaresComarca]);
+
+  // ─── Render: lista de comarcas ───────────────────────────────────────────
   const renderComarca = ({ item }: { item: Comarca }) => {
     const pct = porcentajes[item.id] ?? 0;
     return (
@@ -226,39 +223,17 @@ export default function LogrosScreen() {
     );
   };
 
-  // ─── Render: card de poblacion ────────────────────────────────────────────
-  const renderPoblacion = ({ item }: { item: ImagenPoblacion }) => {
-    const imageUri = getImageUri(item.imagen);
-    return (
-      <TouchableOpacity
-        style={styles.poblacionCard}
-        onPress={() => handlePoblacionPress(item)}
-        activeOpacity={0.8}
-      >
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.poblacionImage} resizeMode="cover" />
-        ) : (
-          <View style={[styles.poblacionImage, styles.poblacionImagePlaceholder]} />
-        )}
-        <View style={styles.poblacionNameContainer}>
-          <Text style={styles.poblacionName} numberOfLines={2}>
-            {item.poblacion}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  // ─── Render: medalla de lugar ─────────────────────────────────────────────
-  const renderMedalla = ({ item }: { item: LugarInteres }) => {
-    const visitado = isLugarVisitado(item);
-    const medalUri = getImageUri(item.imagen_medalla);
-    const tipoImg = TIPO_IMAGES[item.tipo] ?? TIPO_IMAGES['otro'];
+  // ─── Render: medalla individual ──────────────────────────────────────────
+  const renderMedallaItem = (lugar: LugarInteres) => {
+    const visitado = isLugarVisitado(lugar);
+    const medalUri = getImageUri(lugar.imagen_medalla);
+    const tipoImg = TIPO_IMAGES[lugar.tipo] ?? TIPO_IMAGES['otro'];
 
     return (
       <TouchableOpacity
+        key={lugar.id}
         style={styles.medallaCell}
-        onPress={() => setSelectedLugar(item)}
+        onPress={() => setSelectedLugar(lugar)}
         activeOpacity={0.75}
       >
         <View style={[styles.medallaImageWrap, !visitado && styles.medallaNoVisitada]}>
@@ -267,14 +242,26 @@ export default function LogrosScreen() {
           ) : (
             <Image source={tipoImg} style={styles.medallaImage} resizeMode="contain" />
           )}
-          {visitado && (
-            <View style={styles.medallaCheck} />
-          )}
+          {visitado && <View style={styles.medallaCheck} />}
         </View>
-        <Text style={styles.medallaNombre} numberOfLines={2}>
-          {item.nombre}
-        </Text>
+        <Text style={styles.medallaNombre} numberOfLines={2}>{lugar.nombre}</Text>
       </TouchableOpacity>
+    );
+  };
+
+  // ─── Render: fila/header de la sección ──────────────────────────────────
+  const renderSectionItem = ({ item }: { item: SectionItem }) => {
+    if (item.type === 'header') {
+      return <Text style={styles.sectionTitle}>{item.title}</Text>;
+    }
+    return (
+      <View style={styles.medallaRowContainer}>
+        {item.items.map(lugar => renderMedallaItem(lugar))}
+        {item.items.length < 3 &&
+          Array.from({ length: 3 - item.items.length }).map((_, i) => (
+            <View key={`empty-${i}`} style={styles.medallaCell} />
+          ))}
+      </View>
     );
   };
 
@@ -315,22 +302,21 @@ export default function LogrosScreen() {
         }
       />
 
-      {/* ── MODAL 1: Poblaciones de la comarca ── */}
+      {/* ── MODAL: Medallas de la comarca ── */}
       <Modal
         visible={!!selectedComarca}
         animationType="slide"
         onRequestClose={() => {
-          setSelectedPoblacion(null);
+          setSelectedLugar(null);
           setSelectedComarca(null);
         }}
       >
         <View style={styles.modalScreen}>
-          {/* Header */}
           <View style={styles.modalHeader}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => {
-                setSelectedPoblacion(null);
+                setSelectedLugar(null);
                 setSelectedComarca(null);
               }}
             >
@@ -342,149 +328,98 @@ export default function LogrosScreen() {
             <View style={{ width: 70 }} />
           </View>
 
-          {loadingPoblaciones ? (
+          {loadingLugares ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={Colors.verdeOscuro} />
-              <Text style={styles.loadingText}>Cargando pueblos...</Text>
+              <Text style={styles.loadingText}>Cargando medallas...</Text>
             </View>
           ) : (
             <FlatList
-              data={imagenesPoblaciones}
-              renderItem={renderPoblacion}
-              keyExtractor={item => item.id.toString()}
-              numColumns={2}
-              columnWrapperStyle={styles.poblacionRow}
-              contentContainerStyle={styles.poblacionList}
+              data={sectionData}
+              renderItem={renderSectionItem}
+              keyExtractor={item => item.key}
+              contentContainerStyle={styles.medallaList}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>No hay pueblos disponibles</Text>
+                  <Text style={styles.emptyText}>No hay logros para esta comarca</Text>
                 </View>
               }
             />
           )}
         </View>
 
-        {/* ── MODAL 2 (anidado): Medallas de la poblacion ── */}
+        {/* ── MODAL anidado: Detalle del lugar ── */}
         <Modal
-          visible={!!selectedPoblacion}
-          animationType="slide"
-          onRequestClose={() => setSelectedPoblacion(null)}
+          visible={!!selectedLugar}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setSelectedLugar(null)}
         >
-          <View style={styles.modalScreen}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
+          <View style={styles.detalleOverlay}>
+            <View style={styles.detalleCard}>
               <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => {
-                  setSelectedLugar(null);
-                  setSelectedPoblacion(null);
-                }}
+                style={styles.detalleClose}
+                onPress={() => setSelectedLugar(null)}
               >
-                <Text style={styles.backText}>‹ Volver</Text>
+                <Text style={styles.detalleCloseText}>✕</Text>
               </TouchableOpacity>
-              <Text style={styles.modalHeaderTitle} numberOfLines={1}>
-                {selectedPoblacion?.poblacion}
-              </Text>
-              <View style={{ width: 70 }} />
-            </View>
 
-            {loadingLugares ? (
-              <View style={styles.center}>
-                <ActivityIndicator size="large" color={Colors.verdeOscuro} />
-                <Text style={styles.loadingText}>Cargando logros...</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={lugaresPoblacion}
-                renderItem={renderMedalla}
-                keyExtractor={item => item.id.toString()}
-                numColumns={3}
-                columnWrapperStyle={styles.medallaRow}
-                contentContainerStyle={styles.medallaList}
-                ListEmptyComponent={
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No hay logros disponibles</Text>
+              {selectedLugar && (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View style={styles.detalleMedallaWrap}>
+                    {getImageUri(selectedLugar.imagen_medalla) ? (
+                      <Image
+                        source={{ uri: getImageUri(selectedLugar.imagen_medalla)! }}
+                        style={styles.detalleMedallaImg}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Image
+                        source={TIPO_IMAGES[selectedLugar.tipo] ?? TIPO_IMAGES['otro']}
+                        style={styles.detalleMedallaImg}
+                        resizeMode="contain"
+                      />
+                    )}
                   </View>
-                }
-              />
-            )}
-          </View>
 
-          {/* ── MODAL 3 (anidado): Detalle del lugar ── */}
-          <Modal
-            visible={!!selectedLugar}
-            animationType="fade"
-            transparent
-            onRequestClose={() => setSelectedLugar(null)}
-          >
-            <View style={styles.detalleOverlay}>
-              <View style={styles.detalleCard}>
-                <TouchableOpacity
-                  style={styles.detalleClose}
-                  onPress={() => setSelectedLugar(null)}
-                >
-                  <Text style={styles.detalleCloseText}>X</Text>
-                </TouchableOpacity>
+                  <Text style={styles.detalleTipo}>
+                    {TIPO_LABEL[selectedLugar.tipo] ?? selectedLugar.tipo}
+                  </Text>
+                  <Text style={styles.detalleNombre}>{selectedLugar.nombre}</Text>
 
-                {selectedLugar && (
-                  <ScrollView showsVerticalScrollIndicator={false}>
-                    {/* Imagen del tipo / medalla */}
-                    <View style={styles.detalleMedallaWrap}>
-                      {getImageUri(selectedLugar.imagen_medalla) ? (
-                        <Image
-                          source={{ uri: getImageUri(selectedLugar.imagen_medalla)! }}
-                          style={styles.detalleMedallaImg}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <Image
-                          source={TIPO_IMAGES[selectedLugar.tipo] ?? TIPO_IMAGES['otro']}
-                          style={styles.detalleMedallaImg}
-                          resizeMode="contain"
-                        />
-                      )}
-                    </View>
+                  {selectedLugar.poblacion_nombre ? (
+                    <Text style={styles.detallePueblo}>{selectedLugar.poblacion_nombre}</Text>
+                  ) : null}
 
-                    {/* Tipo */}
-                    <Text style={styles.detalleTipo}>
-                      {TIPO_LABEL[selectedLugar.tipo] ?? selectedLugar.tipo}
-                    </Text>
+                  {selectedLugar.descripcionUno ? (
+                    <Text style={styles.detalleDesc}>{selectedLugar.descripcionUno}</Text>
+                  ) : null}
+                  {selectedLugar.descripcionDos ? (
+                    <Text style={styles.detalleDesc}>{selectedLugar.descripcionDos}</Text>
+                  ) : null}
 
-                    {/* Nombre */}
-                    <Text style={styles.detalleNombre}>{selectedLugar.nombre}</Text>
-
-                    {/* Descripciones */}
-                    {selectedLugar.descripcionUno ? (
-                      <Text style={styles.detalleDesc}>{selectedLugar.descripcionUno}</Text>
-                    ) : null}
-                    {selectedLugar.descripcionDos ? (
-                      <Text style={styles.detalleDesc}>{selectedLugar.descripcionDos}</Text>
-                    ) : null}
-
-                    {/* Botón toggle visita */}
-                    {selectedLugar.logro?.id ? (
-                      <TouchableOpacity
-                        style={[
-                          styles.toggleButton,
-                          isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
-                        ]}
-                        onPress={() => {
-                          handleToggleVisita(selectedLugar);
-                          setSelectedLugar(null);
-                        }}
-                      >
-                        <Text style={styles.toggleButtonText}>
-                          {isLugarVisitado(selectedLugar)
-                            ? 'Visitado — Quitar'
-                            : 'Marcar como visitado'}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </ScrollView>
-                )}
-              </View>
+                  {selectedLugar.logro?.id ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.toggleButton,
+                        isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
+                      ]}
+                      onPress={() => {
+                        handleToggleVisita(selectedLugar);
+                        setSelectedLugar(null);
+                      }}
+                    >
+                      <Text style={styles.toggleButtonText}>
+                        {isLugarVisitado(selectedLugar)
+                          ? 'Visitado — Quitar'
+                          : 'Marcar como visitado'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </ScrollView>
+              )}
             </View>
-          </Modal>
+          </View>
         </Modal>
       </Modal>
 
@@ -609,54 +544,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Poblaciones grid ──
-  poblacionList: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  poblacionRow: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  poblacionCard: {
-    width: '48%',
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  poblacionImage: {
-    width: '100%',
-    height: 110,
-  },
-  poblacionImagePlaceholder: {
-    backgroundColor: Colors.nuevoVerde,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  poblacionImageEmoji: {
-    fontSize: 40,
-  },
-  poblacionNameContainer: {
-    padding: 10,
-  },
-  poblacionName: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-    color: Colors.verdeOscuro,
-    textAlign: 'center',
-  },
-
   // ── Medallas grid ──
   medallaList: {
     padding: 16,
     paddingBottom: 40,
   },
-  medallaRow: {
+  sectionTitle: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 16,
+    color: Colors.verdeOscuro,
+    marginTop: 20,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  medallaRowContainer: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
   },
@@ -690,13 +592,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: Colors.verdeClaro,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  medallaCheckText: {
-    color: Colors.white,
-    fontSize: 12,
-    fontFamily: 'Urbanist-Bold',
   },
   medallaNombre: {
     fontFamily: 'Urbanist-Regular',
@@ -735,7 +630,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   detalleCloseText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.grayDark,
   },
   detalleMedallaWrap: {
@@ -761,7 +656,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: Colors.verdeOscuro,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  detallePueblo: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: Colors.grayMedium,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   detalleDesc: {
     fontFamily: 'Urbanist-Regular',
@@ -838,10 +740,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
     minWidth: 220,
-  },
-  medallaGanadaEmoji: {
-    fontSize: 40,
-    marginBottom: 6,
   },
   medallaGanadaTitulo: {
     fontFamily: 'Urbanist-Bold',

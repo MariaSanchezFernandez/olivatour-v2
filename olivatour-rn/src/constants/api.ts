@@ -26,6 +26,7 @@ export const ENDPOINTS = {
   poblaciones: '/api/poblaciones',
   lugares: '/api/lugares',
   lugaresPorPoblacion: (id: number) => `/api/lugares/poblacion/${id}`,
+  lugaresPorComarca: (id: number) => `/api/comarcas/${id}/lugares`,
 
   // Logros
   userLogros: (userId: number) => `/api/usuarios/${userId}/logros`,

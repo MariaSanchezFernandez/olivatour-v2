@@ -8,6 +8,7 @@ import {
   Image,
   Modal,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { LugarInteres, Logro } from '../../types';
@@ -86,101 +87,117 @@ export default function DetalleLugarScreen({
   const medallaUri = getImageUri(lugar.imagen_medalla);
   const visitado = isVisitado();
 
-  // Fotos del lugar
   const fotos = (lugar.fotos ?? []).map(f => getImageUri(f.url)).filter(Boolean) as string[];
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={false}
+      transparent
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Header con color del tipo */}
-        <View style={[styles.header, { backgroundColor: tipoColor }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={onClose}>
-            <Text style={styles.backText}>Volver</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTipo}>{tipoLabel}</Text>
-          <View style={{ width: 70 }} />
-        </View>
+        {/* Fondo oscuro — tap para cerrar */}
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={onClose}
+        />
 
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-          {/* Icono / medalla */}
-          <View style={[styles.iconWrap, visitado && styles.iconWrapVisitado]}>
-            {medallaUri ? (
-              <Image source={{ uri: medallaUri }} style={styles.iconImg} resizeMode="contain" />
-            ) : (
-              <Image source={tipoImg} style={styles.iconImg} resizeMode="contain" />
-            )}
+        {/* Bottom sheet */}
+        <View style={styles.sheet}>
+          {/* Tirador */}
+          <View style={styles.handle} />
+
+          {/* Pill del tipo con color */}
+          <View style={[styles.tipoPill, { backgroundColor: tipoColor }]}>
+            <Text style={styles.tipoPillText}>{tipoLabel}</Text>
           </View>
 
-          {/* Badge visitado */}
-          {visitado && (
-            <View style={styles.visitadoBadge}>
-              <Text style={styles.visitadoBadgeText}>Visitado</Text>
+          <ScrollView
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Icono / medalla */}
+            <View style={[styles.iconWrap, visitado && styles.iconWrapVisitado]}>
+              {medallaUri ? (
+                <Image source={{ uri: medallaUri }} style={styles.iconImg} resizeMode="contain" />
+              ) : (
+                <Image source={tipoImg} style={styles.iconImg} resizeMode="contain" />
+              )}
             </View>
-          )}
 
-          {/* Nombre */}
-          <Text style={styles.nombre}>{lugar.nombre}</Text>
+            {/* Badge visitado */}
+            {visitado && (
+              <View style={styles.visitadoBadge}>
+                <Text style={styles.visitadoBadgeText}>Visitado</Text>
+              </View>
+            )}
 
-          {/* Descripcion */}
-          {lugar.descripcionUno ? (
-            <Text style={styles.desc}>{lugar.descripcionUno}</Text>
-          ) : null}
-          {lugar.descripcionDos ? (
-            <Text style={styles.desc}>{lugar.descripcionDos}</Text>
-          ) : null}
+            {/* Nombre */}
+            <Text style={styles.nombre}>{lugar.nombre}</Text>
 
-          {/* Galeria de fotos */}
-          {fotos.length > 0 && (
-            <View style={styles.galeriaSection}>
-              <Text style={styles.galeriaTitle}>Fotos</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.galeriaScroll}
-              >
-                {fotos.map((uri, i) => (
-                  <Image
-                    key={i}
-                    source={{ uri }}
-                    style={styles.fotoItem}
-                    resizeMode="cover"
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            {/* Pueblo (si lo tiene) */}
+            {lugar.poblacion_nombre ? (
+              <Text style={styles.pueblo}>{lugar.poblacion_nombre}</Text>
+            ) : null}
 
-          {/* Coordenadas */}
-          <View style={styles.coordsRow}>
+            {/* Descripciones */}
+            {lugar.descripcionUno ? (
+              <Text style={styles.desc}>{lugar.descripcionUno}</Text>
+            ) : null}
+            {lugar.descripcionDos ? (
+              <Text style={styles.desc}>{lugar.descripcionDos}</Text>
+            ) : null}
+
+            {/* Galería de fotos */}
+            {fotos.length > 0 && (
+              <View style={styles.galeriaSection}>
+                <Text style={styles.galeriaTitle}>Fotos</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.galeriaScroll}
+                >
+                  {fotos.map((uri, i) => (
+                    <Image
+                      key={i}
+                      source={{ uri }}
+                      style={styles.fotoItem}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Coordenadas */}
             <Text style={styles.coordsText}>
               {lugar.latitud?.toFixed(5)},  {lugar.longitud?.toFixed(5)}
             </Text>
-          </View>
-        </ScrollView>
+          </ScrollView>
 
-        {/* Boton toggle visita — fijo en la parte inferior */}
-        {lugar.logro && (
-          <View style={styles.bottomBar}>
-            <TouchableOpacity
-              style={[styles.toggleBtn, visitado && styles.toggleBtnVisitado]}
-              onPress={handleToggle}
-              disabled={toggling}
-            >
-              {toggling ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <Text style={styles.toggleBtnText}>
-                  {visitado ? 'Visitado — quitar marca' : 'Marcar como visitado'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* Botón toggle — fijo en la parte inferior */}
+          {lugar.logro && (
+            <View style={styles.bottomBar}>
+              <TouchableOpacity
+                style={[styles.toggleBtn, visitado && styles.toggleBtnVisitado]}
+                onPress={handleToggle}
+                disabled={toggling}
+              >
+                {toggling ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={styles.toggleBtnText}>
+                    {visitado ? 'Visitado — quitar marca' : 'Marcar como visitado'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
     </Modal>
   );
@@ -189,69 +206,82 @@ export default function DetalleLugarScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
     backgroundColor: Colors.verdeFondo,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '82%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 20,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D0D0D0',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 12,
+  },
+  tipoPill: {
+    alignSelf: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 16,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 4,
   },
-  backBtn: {
-    padding: 8,
-    width: 70,
-  },
-  backText: {
+  tipoPillText: {
     fontFamily: 'Urbanist-SemiBold',
-    fontSize: 16,
+    fontSize: 13,
     color: Colors.white,
-  },
-  headerTipo: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 17,
-    color: Colors.white,
-    flex: 1,
-    textAlign: 'center',
     textTransform: 'capitalize',
+    letterSpacing: 0.5,
   },
   scroll: {
-    flex: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 16,
     alignItems: 'center',
   },
   iconWrap: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   iconWrapVisitado: {
     backgroundColor: Colors.nuevoVerde,
   },
   iconImg: {
-    width: 80,
-    height: 80,
+    width: 72,
+    height: 72,
   },
   visitadoBadge: {
     backgroundColor: Colors.verdeSeleccionado,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: 20,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   visitadoBadgeText: {
     fontFamily: 'Urbanist-Bold',
@@ -260,28 +290,35 @@ const styles = StyleSheet.create({
   },
   nombre: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 26,
+    fontSize: 24,
     color: Colors.verdeOscuro,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
+  },
+  pueblo: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 14,
+    color: Colors.grayMedium,
+    textAlign: 'center',
+    marginBottom: 14,
   },
   desc: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.grayDark,
-    lineHeight: 26,
-    marginBottom: 14,
+    lineHeight: 24,
+    marginBottom: 12,
     textAlign: 'justify',
     width: '100%',
   },
   galeriaSection: {
     width: '100%',
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 4,
+    marginBottom: 12,
   },
   galeriaTitle: {
     fontFamily: 'Urbanist-SemiBold',
-    fontSize: 17,
+    fontSize: 16,
     color: Colors.verdeOscuro,
     marginBottom: 10,
   },
@@ -290,30 +327,29 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   fotoItem: {
-    width: 200,
-    height: 140,
+    width: 180,
+    height: 120,
     borderRadius: 12,
     backgroundColor: Colors.nuevoVerde,
   },
-  coordsRow: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
   coordsText: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.grayMedium,
+    marginTop: 4,
+    marginBottom: 8,
   },
   bottomBar: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
     backgroundColor: Colors.white,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.nuevoVerde,
   },
   toggleBtn: {
     backgroundColor: Colors.verdeSeleccionado,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
   },

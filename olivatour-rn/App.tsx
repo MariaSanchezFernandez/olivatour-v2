@@ -35,10 +35,10 @@ if (Platform.OS !== 'web') {
 type AuthFlow = 'login' | 'register' | 'recover';
 
 const TAB_ITEMS = [
-  { icon: '⭐', label: 'Comarcas' },
-  { icon: '🏠', label: 'Inicio' },
-  { icon: '🗺',  label: 'Mapa' },
-  { icon: '👤', label: 'Perfil' },
+  { icon: '★', label: 'Comarcas' },
+  { icon: '⌂', label: 'Inicio' },
+  { icon: '◫', label: 'Mapa' },
+  { icon: '◯', label: 'Perfil' },
 ];
 
 function Sidebar({ activeTab, onTabPress }: { activeTab: number; onTabPress: (i: number) => void }) {

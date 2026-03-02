@@ -44,7 +44,7 @@ const TIPO_COLORS: Record<string, string> = {
 
 // Mostrar lugares de interés entre estos niveles de zoom
 const MIN_ZOOM_LUGARES = 9;
-const MAX_ZOOM_MARKERS = 16; // Más allá no renderizamos markers para evitar crash por DOM
+const MAX_ZOOM_MARKERS = 17; // igual que el maxZoom del mapa
 
 export default function MapaScreen() {
   const { comarcas, lugares, userLogros, loadUserLogros } = useApp();
@@ -147,7 +147,7 @@ export default function MapaScreen() {
         <View style={styles.legend}>
           {Object.entries(TIPO_LABEL).map(([tipo, label]) => (
             <View key={tipo} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: TIPO_COLORS[tipo] }]} />
+              <Image source={TIPO_IMAGES[tipo]} style={styles.legendIcon} resizeMode="contain" />
               <Text style={styles.legendText}>{label}</Text>
             </View>
           ))}
@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   lugarIcon: {
-    width: 32,
-    height: 32,
+    width: 42,
+    height: 42,
   },
   legend: {
     position: 'absolute',
@@ -244,10 +244,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  legendIcon: {
+    width: 18,
+    height: 18,
   },
   legendText: {
     fontFamily: 'Urbanist-Regular',
