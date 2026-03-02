@@ -81,7 +81,12 @@ function MainApp() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+      return !sessionStorage.getItem('olivatour_splash');
+    }
+    return true;
+  });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [authFlow, setAuthFlow] = useState<AuthFlow>('login');
 
@@ -90,6 +95,9 @@ function MainApp() {
   }, [isAuthenticated]);
 
   const handleSplashFinish = useCallback(() => {
+    if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('olivatour_splash', '1');
+    }
     setShowSplash(false);
     if (!isAuthenticated) setShowOnboarding(true);
   }, [isAuthenticated]);
