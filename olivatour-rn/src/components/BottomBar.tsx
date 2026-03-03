@@ -106,31 +106,37 @@ export default function BottomBar({ activeTab, onTabPress }: Props) {
           );
         })}
       </View>
-      <View style={styles.safeArea} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.13,
+    shadowRadius: 20,
+    elevation: 14,
     ...(Platform.OS === 'web' ? {
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
     } as any : {}),
   },
   bar: {
     flexDirection: 'row',
-    height: 56,
+    height: 58,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 8,
-    paddingBottom: 4,
+    paddingBottom: 6,
     gap: 3,
   },
   label: {
@@ -141,10 +147,5 @@ const styles = StyleSheet.create({
   labelActive: {
     fontFamily: 'Urbanist-SemiBold',
     color: ACTIVE,
-  },
-  safeArea: {
-    ...(Platform.OS === 'web' ? {
-      height: 'env(safe-area-inset-bottom)',
-    } as any : { height: 0 }),
   },
 });

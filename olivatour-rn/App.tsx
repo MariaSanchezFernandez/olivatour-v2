@@ -148,6 +148,7 @@ function MainApp() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.verdeFondo} />
       <View style={styles.screenContainer}>{screens}</View>
       <BottomBar activeTab={currentTab} onTabPress={setCurrentTab} />
+      <View style={styles.safeAreaBar} />
     </View>
   );
 }
@@ -254,6 +255,11 @@ const styles = StyleSheet.create({
   },
   screenContainer: {
     flex: 1,
+  },
+  safeAreaBar: {
+    ...(Platform.OS === 'web'
+      ? { height: 'env(safe-area-inset-bottom)' }
+      : { height: 0 }) as any,
   },
   desktopRoot: {
     flex: 1,

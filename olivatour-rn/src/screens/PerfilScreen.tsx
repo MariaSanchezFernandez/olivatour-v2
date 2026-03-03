@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,62 @@ import {
   Alert,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import UserService from '../services/UserService';
+import { uploadPhoto } from '../utils/uploadPhoto';
 
 export default function PerfilScreen() {
   const { userName, userEmail, userId, userToken, logout } = useAuth();
   const { comarcas } = useApp();
   const [codigoPostal, setCodigoPostal] = useState('23400');
   const [editandoCodigo, setEditandoCodigo] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const top3Comarcas = comarcas.slice(0, 3);
+
+  useEffect(() => {
+    if (userId) {
+      AsyncStorage.getItem(`olivatour_photo_${userId}`).then(uri => {
+        if (uri) setPhotoUri(uri);
+      });
+    }
+  }, [userId]);
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería para cambiar la foto.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setUploadingPhoto(true);
+      try {
+        const url = await uploadPhoto(
+          result.assets[0].uri,
+          `users/${userId}/profile.jpg`
+        );
+        setPhotoUri(url);
+        await AsyncStorage.setItem(`olivatour_photo_${userId}`, url);
+      } catch {
+        Alert.alert('Error', 'No se pudo subir la foto. Inténtalo de nuevo.');
+      } finally {
+        setUploadingPhoto(false);
+      }
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -51,19 +94,34 @@ export default function PerfilScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header con foto */}
+      {/* Header */}
       <View style={styles.header}>
-        {/* Fondo mapa simulado */}
-        <View style={styles.mapBackground}>
-          <Text style={styles.mapPlaceholder}>🗺 Jaén</Text>
-        </View>
+        <View style={styles.mapBackground} />
 
-        {/* Avatar con iniciales */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-        </View>
+        {/* Avatar con foto o iniciales — tap para cambiar */}
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={handlePickPhoto}
+          disabled={uploadingPhoto}
+          activeOpacity={0.8}
+        >
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatar}>
+              {uploadingPhoto ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.avatarText}>{initials}</Text>
+              )}
+            </View>
+          )}
+          {!uploadingPhoto && (
+            <View style={styles.avatarEditBadge}>
+              <Text style={styles.avatarEditIcon}>+</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Datos del usuario */}
@@ -92,9 +150,9 @@ export default function PerfilScreen() {
             </>
           ) : (
             <TouchableOpacity onPress={() => setEditandoCodigo(true)} style={styles.codigoButton}>
-              <Text style={styles.codigoLabel}>📬 Código postal: </Text>
+              <Text style={styles.codigoLabel}>Código postal: </Text>
               <Text style={styles.codigoValue}>{codigoPostal}</Text>
-              <Text style={styles.codigoEdit}> ✏️</Text>
+              <Text style={styles.codigoEdit}> Editar</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -106,14 +164,14 @@ export default function PerfilScreen() {
           <Text style={styles.sectionTitle}>Comarcas exploradas</Text>
           {top3Comarcas.map(comarca => (
             <View key={comarca.id} style={styles.comarcaRow}>
-              <Text style={styles.comarcaDot}>●</Text>
+              <View style={styles.comarcaDot} />
               <Text style={styles.comarcaName}>{comarca.nombre}</Text>
             </View>
           ))}
         </View>
       )}
 
-      {/* ID de usuario */}
+      {/* Información de cuenta */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Información de cuenta</Text>
         <View style={styles.infoCard}>
@@ -150,12 +208,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: Colors.nuevoVerde,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapPlaceholder: {
-    fontSize: 40,
-    opacity: 0.5,
   },
   avatarContainer: {
     position: 'absolute',
@@ -177,10 +229,36 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
+  avatarImg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: Colors.white,
+  },
   avatarText: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 28,
     color: Colors.white,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.verdeSeleccionado,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  avatarEditIcon: {
+    color: Colors.white,
+    fontSize: 18,
+    lineHeight: 20,
+    fontFamily: 'Urbanist-Bold',
   },
   userInfo: {
     paddingHorizontal: 24,
@@ -218,7 +296,9 @@ const styles = StyleSheet.create({
     color: Colors.verdeOscuro,
   },
   codigoEdit: {
-    fontSize: 14,
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: Colors.grayMedium,
   },
   codigoInput: {
     borderWidth: 1,
@@ -259,8 +339,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   comarcaDot: {
-    color: Colors.verdeClaro,
-    fontSize: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.verdeClaro,
     marginRight: 10,
   },
   comarcaName: {
