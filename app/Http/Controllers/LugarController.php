@@ -27,28 +27,14 @@ class LugarController extends Controller
      */
     public function show($param)
     {
-        // Intentamos buscar por ID primero
         $lugar = LugarInteres::with(['poblacion', 'fotos', 'logro'])
             ->where('id', $param)
             ->orWhere('nombreNormalizado', $param)
             ->first();
 
-        if(!$lugar){
-            return response()->json([
-                'message' => 'Lugar de interés no encontrado'
-            ], 404);
+        if (!$lugar) {
+            return response()->json(['message' => 'Lugar de interés no encontrado'], 404);
         }
-
-        // Obtener las imágenes relacionadas con el lugar
-        $patron = public_path("imagenes/lugaresInteres/imagenes/*{$lugar->nombreNormalizado}*");
-        $archivos = File::glob($patron);
-
-        $imagenes = array_map(function ($archivo) {
-            return url('imagenes/lugaresInteres/imagenes/' . basename($archivo));
-        }, $archivos);
-
-        // Agregar las imágenes a la respuesta
-        $lugar->imagenes = $imagenes;
 
         return response()->json($lugar);
     }

@@ -118,30 +118,30 @@ export default function PerfilScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
       {/* ── Mapa centrado en el codigo postal ── */}
-      <View style={styles.mapHeader}>
-        <Map
-          longitude={mapCenter.longitude}
-          latitude={mapCenter.latitude}
-          zoom={12}
-          style={{ width: '100%', height: '100%' } as any}
-          mapStyle={MAPBOX_STYLE}
-          mapboxAccessToken={MAPBOX_TOKEN}
-          scrollZoom={false}
-          dragPan={false}
-          dragRotate={false}
-          keyboard={false}
-          doubleClickZoom={false}
-          touchZoomRotate={false}
-        >
-          <Marker longitude={mapCenter.longitude} latitude={mapCenter.latitude}>
-            <View style={styles.mapPinDot} />
-          </Marker>
-        </Map>
+      <View style={styles.mapWrapper}>
+        <View style={styles.mapHeader}>
+          <Map
+            longitude={mapCenter.longitude}
+            latitude={mapCenter.latitude}
+            zoom={12}
+            style={{ width: '100%', height: '100%' } as any}
+            mapStyle={MAPBOX_STYLE}
+            mapboxAccessToken={MAPBOX_TOKEN}
+            scrollZoom={false}
+            dragPan={false}
+            dragRotate={false}
+            keyboard={false}
+            doubleClickZoom={false}
+            touchZoomRotate={false}
+          >
+            <Marker longitude={mapCenter.longitude} latitude={mapCenter.latitude}>
+              <View style={styles.mapPinDot} />
+            </Marker>
+          </Map>
+          <View style={styles.mapOverlay} />
+        </View>
 
-        {/* Overlay oscuro tenue */}
-        <View style={styles.mapOverlay} />
-
-        {/* Avatar solapado en la parte inferior del header */}
+        {/* Avatar fuera del overflow:hidden, posicionado sobre el borde inferior del mapa */}
         <View style={styles.avatarContainer}>
           <TouchableOpacity style={styles.avatarOuter} onPress={handlePickPhoto} activeOpacity={0.85}>
             {photoUri ? (
@@ -233,6 +233,10 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 60,
   },
+  mapWrapper: {
+    position: 'relative',
+    marginBottom: 40,
+  },
   mapHeader: {
     height: 220,
     position: 'relative',
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     paddingHorizontal: 24,
-    paddingTop: 58,
+    paddingTop: 16,
     paddingBottom: 20,
   },
   userName: {

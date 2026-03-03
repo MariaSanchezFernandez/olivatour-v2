@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,8 @@ import {
   Platform,
 } from 'react-native';
 import { Colors } from '../../constants/colors';
-import { LugarInteres, Logro } from '../../types';
-import { IMAGES_BASE_URL } from '../../constants/api';
+import { LugarInteres, Logro, Foto } from '../../types';
+import { IMAGES_BASE_URL, API_BASE_URL } from '../../constants/api';
 
 const TIPO_IMAGES: Record<string, any> = {
   calles:      require('../../assets/images/Calles.png'),
@@ -69,6 +69,19 @@ export default function DetalleLugarScreen({
   onToggleVisita,
 }: Props) {
   const [toggling, setToggling] = useState(false);
+  const [fotos, setFotos] = useState<Foto[]>(lugar.fotos ?? []);
+
+  // Fetch full lugar detail to get fotos when the sheet opens
+  useEffect(() => {
+    if (!visible) return;
+    setFotos(lugar.fotos ?? []);
+    fetch(`${API_BASE_URL}/api/lugares/${lugar.id}`, {
+      headers: { 'Accept': 'application/json' },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.fotos?.length) setFotos(data.fotos); })
+      .catch(() => {});
+  }, [visible, lugar.id]);
 
   const isVisitado = (): boolean => {
     if (!lugar.logro) return false;
@@ -87,7 +100,7 @@ export default function DetalleLugarScreen({
   const medallaUri = getImageUri(lugar.imagen_medalla);
   const visitado = isVisitado();
 
-  const fotos = (lugar.fotos ?? []).map(f => getImageUri(f.url)).filter(Boolean) as string[];
+  const fotoUris = fotos.map(f => getImageUri(f.url)).filter(Boolean) as string[];
 
   return (
     <Modal
@@ -153,7 +166,7 @@ export default function DetalleLugarScreen({
             ) : null}
 
             {/* Galería de fotos */}
-            {fotos.length > 0 && (
+            {fotoUris.length > 0 && (
               <View style={styles.galeriaSection}>
                 <Text style={styles.galeriaTitle}>Fotos</Text>
                 <ScrollView
@@ -161,7 +174,7 @@ export default function DetalleLugarScreen({
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.galeriaScroll}
                 >
-                  {fotos.map((uri, i) => (
+                  {fotoUris.map((uri, i) => (
                     <Image
                       key={i}
                       source={{ uri }}
@@ -175,7 +188,7 @@ export default function DetalleLugarScreen({
 
             {/* Coordenadas */}
             <Text style={styles.coordsText}>
-              {lugar.latitud?.toFixed(5)},  {lugar.longitud?.toFixed(5)}
+              {parseFloat(String(lugar.latitud)).toFixed(5)},  {parseFloat(String(lugar.longitud)).toFixed(5)}
             </Text>
           </ScrollView>
 
