@@ -16,7 +16,7 @@ import {
 import { Colors } from '../constants/colors';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { Comarca, LugarInteres, Logro } from '../types';
+import { Comarca, LugarInteres, Logro, ImagenPoblacion } from '../types';
 import AppDataService from '../services/AppDataService';
 import { IMAGES_BASE_URL } from '../constants/api';
 import { verifyProximity, geoErrorMessage } from '../services/GeoService';
@@ -61,10 +61,6 @@ const TIPO_LABEL: { [key: string]: string } = {
   otro:        'Otro',
 };
 
-type SectionItem =
-  | { type: 'header'; title: string; key: string }
-  | { type: 'row'; items: LugarInteres[]; key: string };
-
 function getPorcentajeImage(pct: number) {
   const rounded = Math.floor(pct / 10) * 10;
   return PERCENTAGE_IMAGES[rounded] ?? PERCENTAGE_IMAGES[0];
@@ -83,13 +79,17 @@ export default function LogrosScreen() {
   const isDesktop = width >= 768;
   const [porcentajes, setPorcentajes] = useState<PorcentajeMap>({});
 
-  // Comarca seleccionada → modal de medallas
+  // Nivel 1: comarca seleccionada → lista de ciudades
   const [selectedComarca, setSelectedComarca] = useState<Comarca | null>(null);
+  const [poblacionesComarca, setPoblacionesComarca] = useState<ImagenPoblacion[]>([]);
   const [lugaresComarca, setLugaresComarca] = useState<LugarInteres[]>([]);
   const [userLogros, setUserLogros] = useState<Logro[]>([]);
-  const [loadingLugares, setLoadingLugares] = useState(false);
+  const [loadingComarcaData, setLoadingComarcaData] = useState(false);
 
-  // Lugar seleccionado → popup detalle
+  // Nivel 2: ciudad seleccionada → medallas
+  const [selectedPoblacion, setSelectedPoblacion] = useState<ImagenPoblacion | null>(null);
+
+  // Nivel 3: medalla seleccionada → popup detalle
   const [selectedLugar, setSelectedLugar] = useState<LugarInteres | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [geoToggling, setGeoToggling] = useState(false);
@@ -132,23 +132,33 @@ export default function LogrosScreen() {
 
   const handleComarcaPress = async (comarca: Comarca) => {
     setSelectedComarca(comarca);
-    setLoadingLugares(true);
+    setLoadingComarcaData(true);
+    setPoblacionesComarca([]);
     setLugaresComarca([]);
     try {
-      const [lugares, logros] = await Promise.all([
+      const [poblaciones, lugares, logros] = await Promise.all([
+        AppDataService.fetchImagenesPoblaciones(comarca.id),
         AppDataService.fetchLugaresPorComarca(comarca.id),
         userId && userToken
           ? AppDataService.fetchUserLogros(userId, userToken)
           : Promise.resolve([]),
       ]);
+      setPoblacionesComarca(Array.isArray(poblaciones) ? poblaciones.filter(p => p.imagen) : []);
       setUserLogros(Array.isArray(logros) ? logros : []);
       setLugaresComarca(Array.isArray(lugares) ? lugares : []);
     } catch {
+      setPoblacionesComarca([]);
       setLugaresComarca([]);
     } finally {
-      setLoadingLugares(false);
+      setLoadingComarcaData(false);
     }
   };
+
+  // Medallas filtradas por la ciudad seleccionada
+  const lugaresForPoblacion = useMemo(() => {
+    if (!selectedPoblacion) return [];
+    return lugaresComarca.filter(l => l.poblacion_nombre === selectedPoblacion.poblacion);
+  }, [lugaresComarca, selectedPoblacion]);
 
   const isLugarVisitado = (lugar: LugarInteres): boolean => {
     if (lugar.logro?.id) {
@@ -161,9 +171,7 @@ export default function LogrosScreen() {
 
   const handleToggleVisita = async (lugar: LugarInteres) => {
     if (!lugar.logro?.id || !userId || !userToken) return;
-
     const wasVisited = isLugarVisitado(lugar);
-
     if (!wasVisited) {
       setUserLogros(prev => [
         ...prev,
@@ -173,7 +181,6 @@ export default function LogrosScreen() {
     } else {
       setUserLogros(prev => prev.filter(l => l.id !== lugar.logro!.id));
     }
-
     try {
       await AppDataService.toggleLogro(userId, lugar.logro.id, userToken);
       fetchPorcentajes();
@@ -186,25 +193,7 @@ export default function LogrosScreen() {
     }
   };
 
-  // Agrupa las medallas por pueblo en filas de 3
-  const sectionData = useMemo((): SectionItem[] => {
-    const map = new Map<string, LugarInteres[]>();
-    lugaresComarca.forEach(lugar => {
-      const key = lugar.poblacion_nombre ?? 'Sin pueblo';
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(lugar);
-    });
-    const result: SectionItem[] = [];
-    map.forEach((items, title) => {
-      result.push({ type: 'header', title, key: `h-${title}` });
-      for (let i = 0; i < items.length; i += 3) {
-        result.push({ type: 'row', items: items.slice(i, i + 3), key: `r-${title}-${i}` });
-      }
-    });
-    return result;
-  }, [lugaresComarca]);
-
-  // ─── Render: lista de comarcas ───────────────────────────────────────────
+  // ─── Render: card de comarca (sin texto encima, solo imagen + badge pct) ──
   const renderComarca = ({ item }: { item: Comarca }) => {
     const pct = porcentajes[item.id] ?? 0;
     const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(item.nombre)}.png`;
@@ -214,74 +203,12 @@ export default function LogrosScreen() {
         onPress={() => handleComarcaPress(item)}
         activeOpacity={0.88}
       >
-        {/* Imagen de la comarca */}
-        <Image
-          source={{ uri: imgUri }}
-          style={styles.comarcaImg}
-          resizeMode="cover"
-        />
-
-        {/* Gradiente oscuro sobre la imagen */}
+        <Image source={{ uri: imgUri }} style={styles.comarcaImg} resizeMode="cover" />
         <View style={styles.comarcaGradient} />
-
-        {/* Porcentaje badge */}
         <View style={styles.pctBadge}>
           <Image source={getPorcentajeImage(pct)} style={styles.pctBadgeImg} resizeMode="contain" />
         </View>
-
-        {/* Contenido inferior */}
-        <View style={styles.comarcaOverlay}>
-          <Text style={styles.comarcaName}>{item.nombre}</Text>
-          <View style={styles.progressRow}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${pct}%` as any }]} />
-            </View>
-            <Text style={styles.progressText}>{pct}%</Text>
-          </View>
-        </View>
       </TouchableOpacity>
-    );
-  };
-
-  // ─── Render: medalla individual ──────────────────────────────────────────
-  const renderMedallaItem = (lugar: LugarInteres) => {
-    const visitado = isLugarVisitado(lugar);
-    const medalUri = getImageUri(lugar.imagen_medalla);
-    const tipoImg = TIPO_IMAGES[lugar.tipo] ?? TIPO_IMAGES['otro'];
-
-    return (
-      <TouchableOpacity
-        key={lugar.id}
-        style={styles.medallaCell}
-        onPress={() => setSelectedLugar(lugar)}
-        activeOpacity={0.75}
-      >
-        <View style={[styles.medallaImageWrap, !visitado && styles.medallaNoVisitada]}>
-          {medalUri ? (
-            <Image source={{ uri: medalUri }} style={styles.medallaImage} resizeMode="contain" />
-          ) : (
-            <Image source={tipoImg} style={styles.medallaImage} resizeMode="contain" />
-          )}
-          {visitado && <View style={styles.medallaCheck} />}
-        </View>
-        <Text style={styles.medallaNombre} numberOfLines={2}>{lugar.nombre}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // ─── Render: fila/header de la sección ──────────────────────────────────
-  const renderSectionItem = ({ item }: { item: SectionItem }) => {
-    if (item.type === 'header') {
-      return <Text style={styles.sectionTitle}>{item.title}</Text>;
-    }
-    return (
-      <View style={styles.medallaRowContainer}>
-        {item.items.map(lugar => renderMedallaItem(lugar))}
-        {item.items.length < 3 &&
-          Array.from({ length: 3 - item.items.length }).map((_, i) => (
-            <View key={`empty-${i}`} style={styles.medallaCell} />
-          ))}
-      </View>
     );
   };
 
@@ -320,23 +247,17 @@ export default function LogrosScreen() {
         }
       />
 
-      {/* ── MODAL: Medallas de la comarca ── */}
+      {/* ── MODAL 1: Ciudades de la comarca ── */}
       <Modal
         visible={!!selectedComarca}
         animationType="slide"
-        onRequestClose={() => {
-          setSelectedLugar(null);
-          setSelectedComarca(null);
-        }}
+        onRequestClose={() => { setSelectedComarca(null); setPoblacionesComarca([]); }}
       >
         <View style={styles.modalScreen}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => {
-                setSelectedLugar(null);
-                setSelectedComarca(null);
-              }}
+              onPress={() => { setSelectedComarca(null); setPoblacionesComarca([]); }}
             >
               <Text style={styles.backText}>‹ Volver</Text>
             </TouchableOpacity>
@@ -346,126 +267,232 @@ export default function LogrosScreen() {
             <View style={{ width: 70 }} />
           </View>
 
-          {loadingLugares ? (
+          {loadingComarcaData ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={Colors.verdeOscuro} />
-              <Text style={styles.loadingText}>Cargando medallas...</Text>
+              <Text style={styles.loadingText}>Cargando ciudades...</Text>
             </View>
           ) : (
-            <FlatList
-              data={sectionData}
-              renderItem={renderSectionItem}
-              keyExtractor={item => item.key}
-              contentContainerStyle={styles.medallaList}
-              ListEmptyComponent={
+            <ScrollView contentContainerStyle={styles.ciudadesList}>
+              {poblacionesComarca.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>No hay logros para esta comarca</Text>
+                  <Text style={styles.emptyText}>No hay ciudades disponibles</Text>
                 </View>
-              }
-            />
+              ) : (
+                poblacionesComarca.map(pob => {
+                  const escudoUri = getImageUri(pob.imagen);
+                  return (
+                    <TouchableOpacity
+                      key={pob.id}
+                      style={styles.ciudadCard}
+                      onPress={() => setSelectedPoblacion(pob)}
+                      activeOpacity={0.78}
+                    >
+                      <View style={styles.ciudadEscudoWrap}>
+                        {escudoUri ? (
+                          <Image
+                            source={{ uri: escudoUri }}
+                            style={styles.ciudadEscudo}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <View style={styles.ciudadEscudoPlaceholder} />
+                        )}
+                      </View>
+                      <Text style={styles.ciudadNombre}>{pob.poblacion}</Text>
+                      <Text style={styles.ciudadChevron}>›</Text>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
           )}
         </View>
 
-        {/* ── MODAL anidado: Detalle del lugar ── */}
+        {/* ── MODAL 2: Medallas de la ciudad ── */}
         <Modal
-          visible={!!selectedLugar}
-          animationType="fade"
-          transparent
-          onRequestClose={() => { setSelectedLugar(null); setGeoError(null); }}
+          visible={!!selectedPoblacion}
+          animationType="slide"
+          onRequestClose={() => { setSelectedLugar(null); setSelectedPoblacion(null); }}
         >
-          <View style={styles.detalleOverlay}>
-            <View style={styles.detalleCard}>
+          <View style={styles.modalScreen}>
+            {/* Cabecera ciudad */}
+            <View style={styles.medallasHeader}>
               <TouchableOpacity
-                style={styles.detalleClose}
-                onPress={() => { setSelectedLugar(null); setGeoError(null); }}
+                style={styles.medallasBackBtn}
+                onPress={() => { setSelectedLugar(null); setSelectedPoblacion(null); }}
               >
-                <Text style={styles.detalleCloseText}>✕</Text>
+                <Text style={styles.backText}>‹ Volver</Text>
               </TouchableOpacity>
-
-              {selectedLugar && (
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  <View style={styles.detalleMedallaWrap}>
-                    {getImageUri(selectedLugar.imagen_medalla) ? (
-                      <Image
-                        source={{ uri: getImageUri(selectedLugar.imagen_medalla)! }}
-                        style={styles.detalleMedallaImg}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Image
-                        source={TIPO_IMAGES[selectedLugar.tipo] ?? TIPO_IMAGES['otro']}
-                        style={styles.detalleMedallaImg}
-                        resizeMode="contain"
-                      />
-                    )}
-                  </View>
-
-                  <Text style={styles.detalleTipo}>
-                    {TIPO_LABEL[selectedLugar.tipo] ?? selectedLugar.tipo}
-                  </Text>
-                  <Text style={styles.detalleNombre}>{selectedLugar.nombre}</Text>
-
-                  {selectedLugar.poblacion_nombre ? (
-                    <Text style={styles.detallePueblo}>{selectedLugar.poblacion_nombre}</Text>
-                  ) : null}
-
-                  {selectedLugar.descripcionUno ? (
-                    <Text style={styles.detalleDesc}>{selectedLugar.descripcionUno}</Text>
-                  ) : null}
-                  {selectedLugar.descripcionDos ? (
-                    <Text style={styles.detalleDesc}>{selectedLugar.descripcionDos}</Text>
-                  ) : null}
-
-                  {selectedLugar.logro?.id ? (
-                    <>
-                      {geoError ? (
-                        <Text style={styles.geoErrorText}>{geoError}</Text>
-                      ) : null}
-                      <TouchableOpacity
-                        style={[
-                          styles.toggleButton,
-                          isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
-                          geoToggling && styles.toggleButtonDisabled,
-                        ]}
-                        disabled={geoToggling}
-                        onPress={async () => {
-                          setGeoError(null);
-                          const wasVisitado = isLugarVisitado(selectedLugar);
-                          if (!wasVisitado) {
-                            setGeoToggling(true);
-                            const lat = parseFloat(String(selectedLugar.latitud));
-                            const lng = parseFloat(String(selectedLugar.longitud));
-                            if (!isNaN(lat) && !isNaN(lng)) {
-                              const result = await verifyProximity(lat, lng);
-                              if (!result.ok) {
-                                setGeoError(geoErrorMessage(result, selectedLugar.nombre));
-                                setGeoToggling(false);
-                                return;
-                              }
-                            }
-                            setGeoToggling(false);
-                          }
-                          handleToggleVisita(selectedLugar);
-                          setSelectedLugar(null);
-                          setGeoError(null);
-                        }}
-                      >
-                        {geoToggling ? (
-                          <ActivityIndicator color={Colors.white} size="small" />
-                        ) : (
-                          <Text style={styles.toggleButtonText}>
-                            {isLugarVisitado(selectedLugar)
-                              ? 'Visitado — Quitar'
-                              : 'Marcar como visitado'}
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    </>
-                  ) : null}
-                </ScrollView>
-              )}
+              <View style={styles.medallasHeroContent}>
+                {selectedPoblacion?.imagen ? (
+                  <Image
+                    source={{ uri: getImageUri(selectedPoblacion.imagen)! }}
+                    style={styles.ciudadHeroEscudo}
+                    resizeMode="contain"
+                  />
+                ) : null}
+                <Text style={styles.medallasHeaderCity}>{selectedPoblacion?.poblacion}</Text>
+                <Text style={styles.medallasHeaderComarca}>{selectedComarca?.nombre}</Text>
+              </View>
             </View>
+
+            {/* Grid 2 columnas — replica iOS */}
+            <ScrollView contentContainerStyle={styles.medallasGrid}>
+              {lugaresForPoblacion.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No hay medallas para esta ciudad</Text>
+                </View>
+              ) : (
+                (() => {
+                  const rows: LugarInteres[][] = [];
+                  for (let i = 0; i < lugaresForPoblacion.length; i += 2) {
+                    rows.push(lugaresForPoblacion.slice(i, i + 2));
+                  }
+                  return rows.map((row, ri) => (
+                    <View key={ri} style={styles.medallaRow2}>
+                      {row.map(lugar => {
+                        const visitado = isLugarVisitado(lugar);
+                        const medalUri = getImageUri(lugar.imagen_medalla);
+                        const tipoImg = TIPO_IMAGES[lugar.tipo] ?? TIPO_IMAGES['otro'];
+                        return (
+                          <TouchableOpacity
+                            key={lugar.id}
+                            style={styles.medallaCell2}
+                            onPress={() => setSelectedLugar(lugar)}
+                            activeOpacity={0.75}
+                          >
+                            <View style={styles.medallaImgWrap2}>
+                              {medalUri ? (
+                                <Image
+                                  source={{ uri: medalUri }}
+                                  style={styles.medallaImg2}
+                                  resizeMode="contain"
+                                />
+                              ) : (
+                                <Image
+                                  source={tipoImg}
+                                  style={styles.medallaImg2}
+                                  resizeMode="contain"
+                                />
+                              )}
+                              {!visitado && <View style={styles.medallaOverlay2} />}
+                            </View>
+                            <Text style={styles.medallaNombre2} numberOfLines={2}>
+                              {lugar.nombre}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {row.length < 2 && <View style={styles.medallaCell2} />}
+                    </View>
+                  ));
+                })()
+              )}
+            </ScrollView>
           </View>
+
+          {/* ── POPUP: Detalle de lugar/medalla ── */}
+          <Modal
+            visible={!!selectedLugar}
+            animationType="fade"
+            transparent
+            onRequestClose={() => { setSelectedLugar(null); setGeoError(null); }}
+          >
+            <View style={styles.detalleOverlay}>
+              <View style={styles.detalleCard}>
+                <TouchableOpacity
+                  style={styles.detalleClose}
+                  onPress={() => { setSelectedLugar(null); setGeoError(null); }}
+                >
+                  <Text style={styles.detalleCloseText}>✕</Text>
+                </TouchableOpacity>
+
+                {selectedLugar && (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={styles.detalleMedallaWrap}>
+                      {getImageUri(selectedLugar.imagen_medalla) ? (
+                        <Image
+                          source={{ uri: getImageUri(selectedLugar.imagen_medalla)! }}
+                          style={styles.detalleMedallaImg}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Image
+                          source={TIPO_IMAGES[selectedLugar.tipo] ?? TIPO_IMAGES['otro']}
+                          style={styles.detalleMedallaImg}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </View>
+
+                    <Text style={styles.detalleTipo}>
+                      {TIPO_LABEL[selectedLugar.tipo] ?? selectedLugar.tipo}
+                    </Text>
+                    <Text style={styles.detalleNombre}>{selectedLugar.nombre}</Text>
+
+                    {selectedLugar.poblacion_nombre ? (
+                      <Text style={styles.detallePueblo}>{selectedLugar.poblacion_nombre}</Text>
+                    ) : null}
+
+                    {selectedLugar.descripcionUno ? (
+                      <Text style={styles.detalleDesc}>{selectedLugar.descripcionUno}</Text>
+                    ) : null}
+                    {selectedLugar.descripcionDos ? (
+                      <Text style={styles.detalleDesc}>{selectedLugar.descripcionDos}</Text>
+                    ) : null}
+
+                    {selectedLugar.logro?.id ? (
+                      <>
+                        {geoError ? (
+                          <Text style={styles.geoErrorText}>{geoError}</Text>
+                        ) : null}
+                        <TouchableOpacity
+                          style={[
+                            styles.toggleButton,
+                            isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
+                            geoToggling && styles.toggleButtonDisabled,
+                          ]}
+                          disabled={geoToggling}
+                          onPress={async () => {
+                            setGeoError(null);
+                            const wasVisitado = isLugarVisitado(selectedLugar);
+                            if (!wasVisitado) {
+                              setGeoToggling(true);
+                              const lat = parseFloat(String(selectedLugar.latitud));
+                              const lng = parseFloat(String(selectedLugar.longitud));
+                              if (!isNaN(lat) && !isNaN(lng)) {
+                                const result = await verifyProximity(lat, lng);
+                                if (!result.ok) {
+                                  setGeoError(geoErrorMessage(result, selectedLugar.nombre));
+                                  setGeoToggling(false);
+                                  return;
+                                }
+                              }
+                              setGeoToggling(false);
+                            }
+                            handleToggleVisita(selectedLugar);
+                            setSelectedLugar(null);
+                            setGeoError(null);
+                          }}
+                        >
+                          {geoToggling ? (
+                            <ActivityIndicator color={Colors.white} size="small" />
+                          ) : (
+                            <Text style={styles.toggleButtonText}>
+                              {isLugarVisitado(selectedLugar)
+                                ? 'Visitado — Quitar'
+                                : 'Marcar como visitado'}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </>
+                    ) : null}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+          </Modal>
         </Modal>
       </Modal>
 
@@ -510,7 +537,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // ── Comarca card ──
+  // ── Comarca card (solo imagen + badge, sin texto) ──
   comarcaCard: {
     borderRadius: 18,
     marginBottom: 16,
@@ -539,8 +566,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.75) 100%)' as any,
-    backgroundColor: 'rgba(19,42,19,0.35)',
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.6) 100%)' as any,
+    backgroundColor: 'rgba(19,42,19,0.25)',
   } as any,
   pctBadge: {
     position: 'absolute',
@@ -556,45 +583,6 @@ const styles = StyleSheet.create({
   pctBadgeImg: {
     width: 40,
     height: 40,
-  },
-  comarcaOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-  },
-  comarcaName: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 18,
-    color: Colors.white,
-    marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 3,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.verdeClaro,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 13,
-    color: Colors.white,
-    minWidth: 32,
-    textAlign: 'right',
   },
 
   // ── Modal pantalla completa ──
@@ -633,61 +621,143 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Medallas grid ──
-  medallaList: {
-    padding: 16,
+  // ── Lista de ciudades ──
+  ciudadesList: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 40,
   },
-  sectionTitle: {
-    fontFamily: 'Urbanist-Bold',
-    fontSize: 16,
-    color: Colors.verdeOscuro,
-    marginTop: 20,
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  medallaRowContainer: {
+  ciudadCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  medallaCell: {
-    width: '31%',
     alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  medallaImageWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: Colors.nuevoVerde,
+  ciudadEscudoWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.verdeFondo,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
-    position: 'relative',
+    marginRight: 14,
+    overflow: 'hidden',
   },
-  medallaNoVisitada: {
-    opacity: 0.6,
-    filter: 'grayscale(100%)' as any,
-  },
-  medallaImage: {
+  ciudadEscudo: {
     width: 56,
     height: 56,
   },
-  medallaCheck: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.verdeClaro,
+  ciudadEscudoPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.nuevoVerde,
   },
-  medallaNombre: {
+  ciudadNombre: {
+    flex: 1,
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 17,
+    color: Colors.verdeOscuro,
+  },
+  ciudadChevron: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
+    fontSize: 22,
+    color: Colors.grayMedium,
+    marginLeft: 8,
+  },
+
+  // ── Cabecera pantalla medallas (nivel 2) ──
+  medallasHeader: {
+    backgroundColor: Colors.white,
+    paddingTop: 56,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    alignItems: 'center',
+  },
+  medallasBackBtn: {
+    alignSelf: 'flex-start',
+    paddingBottom: 12,
+    paddingLeft: 0,
+  },
+  medallasHeroContent: {
+    alignItems: 'center',
+  },
+  ciudadHeroEscudo: {
+    width: 90,
+    height: 90,
+    marginBottom: 10,
+  },
+  medallasHeaderCity: {
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 26,
+    color: Colors.verdeOscuro,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  medallasHeaderComarca: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 15,
+    color: Colors.grayMedium,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+
+  // ── Grid 2 columnas medallas (replica iOS) ──
+  medallasGrid: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  medallaRow2: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  medallaCell2: {
+    width: '48%',
+    alignItems: 'center',
+  },
+  medallaImgWrap2: {
+    width: 130,
+    height: 130,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: 8,
+  },
+  medallaImg2: {
+    width: 130,
+    height: 130,
+  },
+  medallaOverlay2: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  medallaNombre2: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
     color: Colors.grayDark,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 17,
+    maxWidth: 130,
   },
 
   // ── Detalle lugar (popup centrado) ──
@@ -728,8 +798,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   detalleMedallaImg: {
-    width: 90,
-    height: 90,
+    width: 110,
+    height: 110,
   },
   detalleTipo: {
     fontFamily: 'Urbanist-Regular',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,51 @@ import { Colors } from '../constants/colors';
 import { CURIOSIDADES_JAEN } from '../constants/curiosidades';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { IMAGES_BASE_URL } from '../constants/api';
+import { Comarca } from '../types';
 
 interface Props {
   onGoToMapa: () => void;
   onGoToLogros: () => void;
 }
+
+function ComarcaImageCard({ comarca, onPress }: { comarca: Comarca; onPress: () => void }) {
+  const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(comarca.nombre)}.png`;
+  return (
+    <TouchableOpacity style={cardSt.card} onPress={onPress} activeOpacity={0.88}>
+      <Image source={{ uri: imgUri }} style={cardSt.img} resizeMode="cover" />
+      <View style={cardSt.gradient} />
+    </TouchableOpacity>
+  );
+}
+
+const cardSt = StyleSheet.create({
+  card: {
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: 'hidden',
+    height: 100,
+    position: 'relative',
+    backgroundColor: Colors.nuevoVerde,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  img: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.55) 100%)' as any,
+    backgroundColor: 'rgba(19,42,19,0.2)',
+  } as any,
+});
 
 export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
   const { userName } = useAuth();
@@ -67,23 +107,21 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
         </View>
       </TouchableOpacity>
 
-      {/* Logros recientes */}
+      {/* Comarcas recientes — mismas tarjetas de imagen que LogrosScreen (iOS: height 100) */}
       {top3Comarcas.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Comarcas</Text>
             <TouchableOpacity onPress={onGoToLogros}>
-              <Text style={styles.seeAll}>Ver todas →</Text>
+              <Text style={styles.seeAll}>Ver todas</Text>
             </TouchableOpacity>
           </View>
           {top3Comarcas.map(comarca => (
-            <View key={comarca.id} style={styles.comarcaCard}>
-              <Text style={styles.comarcaName}>{comarca.nombre}</Text>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '0%' }]} />
-              </View>
-              <Text style={styles.progressText}>0% completado</Text>
-            </View>
+            <ComarcaImageCard
+              key={comarca.id}
+              comarca={comarca}
+              onPress={onGoToLogros}
+            />
           ))}
         </View>
       )}
@@ -93,7 +131,7 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>¿Crees que conoces Jaén?</Text>
           <TouchableOpacity onPress={refreshCuriosidad} style={styles.refreshButton}>
-            <Text style={styles.refreshIcon}>🔄</Text>
+            <Text style={styles.refreshText}>Otra</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.curiosidadCard}>
@@ -124,7 +162,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 32,
+    fontSize: 36,
     color: Colors.verdeOscuro,
     marginBottom: 6,
   },
@@ -135,15 +173,15 @@ const styles = StyleSheet.create({
   },
   mapaButton: {
     marginHorizontal: 24,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
-    height: 180,
-    marginBottom: 24,
+    height: 220,
+    marginBottom: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 5,
   },
   mapaImage: {
     width: '100%',
@@ -151,88 +189,60 @@ const styles = StyleSheet.create({
   },
   mapaOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.32)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   mapaButtonText: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 20,
+    fontSize: 22,
     color: Colors.white,
   },
   section: {
     marginHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 20,
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 22,
     color: Colors.verdeOscuro,
   },
   seeAll: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 14,
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 15,
     color: Colors.verdeOscuro,
   },
   refreshButton: {
-    padding: 4,
-  },
-  refreshIcon: {
-    fontSize: 20,
-  },
-  comarcaCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  comarcaName: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 16,
-    color: Colors.verdeOscuro,
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     backgroundColor: Colors.nuevoVerde,
-    borderRadius: 3,
-    marginBottom: 4,
+    borderRadius: 10,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.verdeClaro,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: Colors.grayMedium,
+  refreshText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 14,
+    color: Colors.verdeOscuro,
   },
   curiosidadCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
   },
   curiosidadText: {
     fontFamily: 'Urbanist-Regular',
     fontSize: 16,
-    color: Colors.black,
+    color: Colors.verdeOscuro,
     lineHeight: 26,
   },
 });
