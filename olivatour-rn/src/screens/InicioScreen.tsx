@@ -23,7 +23,7 @@ interface Props {
 }
 
 function ComarcaCarouselCard({ comarca, onPress }: { comarca: Comarca; onPress: () => void }) {
-  const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(comarca.nombre)}.png`;
+  const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(comarca.nombre)}.png?v=2`;
   return (
     <TouchableOpacity style={cardSt.card} onPress={onPress} activeOpacity={0.85}>
       <Image source={{ uri: imgUri }} style={cardSt.img} resizeMode="cover" />

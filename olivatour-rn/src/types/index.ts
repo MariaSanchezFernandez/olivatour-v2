@@ -119,6 +119,7 @@ export interface ImagenPoblacion {
   id: number;
   poblacion: string;
   imagen: string | null;
+  nombreNormalizado: string | null;
 }
 
 // Tipos para la navegación

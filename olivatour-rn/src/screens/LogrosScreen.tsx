@@ -66,10 +66,18 @@ function getPorcentajeImage(pct: number) {
   return PERCENTAGE_IMAGES[rounded] ?? PERCENTAGE_IMAGES[0];
 }
 
+// Encodes path segments (handles accents and spaces) while preserving slashes
 function getImageUri(imageStr: string | null | undefined): string | null {
   if (!imageStr) return null;
   if (imageStr.startsWith('http')) return imageStr;
-  return `${IMAGES_BASE_URL}${imageStr}`;
+  const encoded = imageStr.split('/').map(s => encodeURIComponent(s)).join('/');
+  return `${IMAGES_BASE_URL}${encoded}`;
+}
+
+// City photo from poblacionImagenes folder using nombreNormalizado
+function getCityPhotoUri(nombreNormalizado: string | null | undefined): string | null {
+  if (!nombreNormalizado) return null;
+  return `${IMAGES_BASE_URL}/imagenes/poblacion/poblacionImagenes/${encodeURIComponent(nombreNormalizado)}_0.jpg`;
 }
 
 export default function LogrosScreen() {
@@ -196,7 +204,7 @@ export default function LogrosScreen() {
   // ─── Render: card de comarca (sin texto encima, solo imagen + badge pct) ──
   const renderComarca = ({ item }: { item: Comarca }) => {
     const pct = porcentajes[item.id] ?? 0;
-    const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(item.nombre)}.png`;
+    const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(item.nombre)}.png?v=2`;
     return (
       <TouchableOpacity
         style={styles.comarcaCard}
@@ -315,14 +323,26 @@ export default function LogrosScreen() {
           onRequestClose={() => { setSelectedLugar(null); setSelectedPoblacion(null); }}
         >
           <View style={styles.modalScreen}>
-            {/* Cabecera ciudad */}
+            {/* Cabecera ciudad — hero photo + escudo + nombre (estilo iOS DetalleMonedaLogros) */}
             <View style={styles.medallasHeader}>
+              {/* Foto de la ciudad como hero background */}
+              {selectedPoblacion?.nombreNormalizado ? (
+                <Image
+                  source={{ uri: getCityPhotoUri(selectedPoblacion.nombreNormalizado)! }}
+                  style={styles.medallasHeroImg}
+                  resizeMode="cover"
+                />
+              ) : null}
+              {/* Gradiente sobre la foto */}
+              <View style={styles.medallasHeroGradient} />
+              {/* Back button */}
               <TouchableOpacity
                 style={styles.medallasBackBtn}
                 onPress={() => { setSelectedLugar(null); setSelectedPoblacion(null); }}
               >
                 <Text style={styles.backText}>‹ Volver</Text>
               </TouchableOpacity>
+              {/* Escudo + nombre ciudad + comarca */}
               <View style={styles.medallasHeroContent}>
                 {selectedPoblacion?.imagen ? (
                   <Image
@@ -669,43 +689,59 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // ── Cabecera pantalla medallas (nivel 2) ──
+  // ── Cabecera pantalla medallas (nivel 2) — hero photo estilo iOS ──
   medallasHeader: {
-    backgroundColor: Colors.white,
-    paddingTop: 56,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: 'center',
+    height: 260,
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: Colors.verdeOscuro,
   },
+  medallasHeroImg: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  medallasHeroGradient: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.7) 100%)' as any,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  } as any,
   medallasBackBtn: {
-    alignSelf: 'flex-start',
-    paddingBottom: 12,
-    paddingLeft: 0,
+    position: 'absolute',
+    top: 52,
+    left: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 10,
   },
   medallasHeroContent: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
     alignItems: 'center',
+    paddingHorizontal: 16,
   },
   ciudadHeroEscudo: {
     width: 90,
     height: 90,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   medallasHeaderCity: {
     fontFamily: 'Urbanist-Bold',
     fontSize: 26,
-    color: Colors.verdeOscuro,
+    color: Colors.white,
     textAlign: 'center',
     marginBottom: 2,
   },
   medallasHeaderComarca: {
     fontFamily: 'Urbanist-Regular',
     fontSize: 15,
-    color: Colors.grayMedium,
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     textDecorationLine: 'underline',
   },

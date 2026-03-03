@@ -120,23 +120,6 @@ export default function MapaScreen() {
           </Marker>
         ))}
 
-        {/* Etiquetas de localidad — aparecen al hacer zoom (>= 9) */}
-        {showLugares && poblaciones.map(pob => {
-          if (!pob.latitud || !pob.longitud) return null;
-          return (
-            <Marker
-              key={`pob-${pob.id}`}
-              longitude={pob.longitud}
-              latitude={pob.latitud}
-              anchor="bottom"
-            >
-              <View style={styles.localidadLabel}>
-                <Text style={styles.localidadLabelText}>{pob.nombre}</Text>
-              </View>
-            </Marker>
-          );
-        })}
-
         {/* Marcadores de lugares de interes — aparecen al hacer zoom (>= 9) */}
         {showLugares && lugares.map(lugar => {
           if (!lugar.latitud || !lugar.longitud) return null;
@@ -233,23 +216,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 12,
   },
-  localidadLabel: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-  },
-  localidadLabelText: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 11,
-    color: Colors.verdeOscuro,
-  },
   lugarMarker: {
     cursor: 'pointer' as any,
   },
@@ -265,9 +231,9 @@ const styles = StyleSheet.create({
     bottom: 80,
     left: 16,
     backgroundColor: 'rgba(255,255,255,0.93)',
-    borderRadius: 12,
-    padding: 10,
-    gap: 4,
+    borderRadius: 14,
+    padding: 14,
+    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -276,15 +242,15 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   legendIcon: {
-    width: 18,
-    height: 18,
+    width: 26,
+    height: 26,
   },
   legendText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 11,
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 14,
     color: Colors.grayDark,
   },
   zoomHint: {

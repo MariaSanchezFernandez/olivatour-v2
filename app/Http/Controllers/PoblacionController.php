@@ -235,7 +235,8 @@ class PoblacionController extends Controller{
             $imagenes[] = [
                 'id' => $poblacion->id,
                 'poblacion' => $poblacion->nombre,
-                'imagen' => $imagen
+                'imagen' => $imagen,
+                'nombreNormalizado' => $poblacion->nombreNormalizado,
             ];
         }
 
