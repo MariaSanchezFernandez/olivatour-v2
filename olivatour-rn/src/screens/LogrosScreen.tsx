@@ -288,6 +288,7 @@ export default function LogrosScreen() {
               ) : (
                 poblacionesComarca.map(pob => {
                   const escudoUri = getImageUri(pob.imagen);
+                  const fotoUri = getCityPhotoUri(pob.nombreNormalizado);
                   return (
                     <TouchableOpacity
                       key={pob.id}
@@ -295,6 +296,17 @@ export default function LogrosScreen() {
                       onPress={() => setSelectedPoblacion(pob)}
                       activeOpacity={0.78}
                     >
+                      {/* Foto de fondo */}
+                      {fotoUri && (
+                        <Image
+                          source={{ uri: fotoUri }}
+                          style={StyleSheet.absoluteFillObject as any}
+                          resizeMode="cover"
+                        />
+                      )}
+                      {/* Overlay oscuro */}
+                      <View style={styles.ciudadCardOverlay} />
+                      {/* Escudo */}
                       <View style={styles.ciudadEscudoWrap}>
                         {escudoUri ? (
                           <Image
@@ -353,6 +365,11 @@ export default function LogrosScreen() {
                 ) : null}
                 <Text style={styles.medallasHeaderCity}>{selectedPoblacion?.poblacion}</Text>
                 <Text style={styles.medallasHeaderComarca}>{selectedComarca?.nombre}</Text>
+                {selectedPoblacion?.descripcion ? (
+                  <Text style={styles.medallasHeaderDesc} numberOfLines={3}>
+                    {selectedPoblacion.descripcion}
+                  </Text>
+                ) : null}
               </View>
             </View>
 
@@ -645,22 +662,29 @@ const styles = StyleSheet.create({
   ciudadCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     borderRadius: 16,
     marginBottom: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    height: 100,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: Colors.verdeOscuro,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ciudadCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.42)',
   },
   ciudadEscudoWrap: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.verdeFondo,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
@@ -674,24 +698,24 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.nuevoVerde,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   ciudadNombre: {
     flex: 1,
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 17,
-    color: Colors.verdeOscuro,
+    color: Colors.white,
   },
   ciudadChevron: {
     fontFamily: 'Urbanist-Regular',
     fontSize: 22,
-    color: Colors.grayMedium,
+    color: 'rgba(255,255,255,0.7)',
     marginLeft: 8,
   },
 
   // ── Cabecera pantalla medallas (nivel 2) — hero photo estilo iOS ──
   medallasHeader: {
-    height: 260,
+    minHeight: 280,
     position: 'relative',
     overflow: 'hidden',
     justifyContent: 'flex-end',
@@ -744,6 +768,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     textDecorationLine: 'underline',
+  },
+  medallasHeaderDesc: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+    paddingHorizontal: 8,
   },
 
   // ── Grid 2 columnas medallas (replica iOS) ──

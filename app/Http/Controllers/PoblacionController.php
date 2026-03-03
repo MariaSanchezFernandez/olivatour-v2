@@ -237,6 +237,7 @@ class PoblacionController extends Controller{
                 'poblacion' => $poblacion->nombre,
                 'imagen' => $imagen,
                 'nombreNormalizado' => $poblacion->nombreNormalizado,
+                'descripcion' => $poblacion->descripcion1,
             ];
         }
 
