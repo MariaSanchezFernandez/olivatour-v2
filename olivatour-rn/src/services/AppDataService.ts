@@ -68,7 +68,8 @@ class AppDataService {
       },
     });
     if (!response.ok) return [];
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
   }
 
   async toggleLogro(userId: number, logroId: number, token: string): Promise<boolean> {

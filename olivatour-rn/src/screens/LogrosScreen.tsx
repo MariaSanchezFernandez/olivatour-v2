@@ -138,8 +138,8 @@ export default function LogrosScreen() {
           ? AppDataService.fetchUserLogros(userId, userToken)
           : Promise.resolve([]),
       ]);
-      setUserLogros(logros);
-      setLugaresComarca(lugares);
+      setUserLogros(Array.isArray(logros) ? logros : []);
+      setLugaresComarca(Array.isArray(lugares) ? lugares : []);
     } catch {
       setLugaresComarca([]);
     } finally {
