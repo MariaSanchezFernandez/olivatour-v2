@@ -207,21 +207,38 @@ export default function LogrosScreen() {
   // ─── Render: lista de comarcas ───────────────────────────────────────────
   const renderComarca = ({ item }: { item: Comarca }) => {
     const pct = porcentajes[item.id] ?? 0;
+    const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(item.nombre)}.png`;
     return (
       <TouchableOpacity
         style={styles.comarcaCard}
         onPress={() => handleComarcaPress(item)}
-        activeOpacity={0.8}
+        activeOpacity={0.88}
       >
-        <Image source={getPorcentajeImage(pct)} style={styles.porcentajeImage} resizeMode="contain" />
-        <View style={styles.comarcaInfo}>
-          <Text style={styles.comarcaName}>{item.nombre}</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${pct}%` as any }]} />
-          </View>
-          <Text style={styles.progressText}>{pct}% completado</Text>
+        {/* Imagen de la comarca */}
+        <Image
+          source={{ uri: imgUri }}
+          style={styles.comarcaImg}
+          resizeMode="cover"
+        />
+
+        {/* Gradiente oscuro sobre la imagen */}
+        <View style={styles.comarcaGradient} />
+
+        {/* Porcentaje badge */}
+        <View style={styles.pctBadge}>
+          <Image source={getPorcentajeImage(pct)} style={styles.pctBadgeImg} resizeMode="contain" />
         </View>
-        <Text style={styles.chevron}>›</Text>
+
+        {/* Contenido inferior */}
+        <View style={styles.comarcaOverlay}>
+          <Text style={styles.comarcaName}>{item.nombre}</Text>
+          <View style={styles.progressRow}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${pct}%` as any }]} />
+            </View>
+            <Text style={styles.progressText}>{pct}%</Text>
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -495,52 +512,89 @@ const styles = StyleSheet.create({
 
   // ── Comarca card ──
   comarcaCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
+    borderRadius: 18,
+    marginBottom: 16,
+    overflow: 'hidden',
+    height: 160,
+    position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 6,
+    backgroundColor: Colors.nuevoVerde,
   },
-  porcentajeImage: {
-    width: 60,
-    height: 60,
-    marginRight: 16,
+  comarcaImg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
-  comarcaInfo: {
-    flex: 1,
+  comarcaGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.75) 100%)' as any,
+    backgroundColor: 'rgba(19,42,19,0.35)',
+  } as any,
+  pctBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 52,
+    height: 52,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pctBadgeImg: {
+    width: 40,
+    height: 40,
+  },
+  comarcaOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
   },
   comarcaName: {
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 17,
-    color: Colors.verdeOscuro,
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 18,
+    color: Colors.white,
     marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: Colors.nuevoVerde,
-    borderRadius: 4,
-    marginBottom: 4,
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
   },
   progressFill: {
     height: '100%',
     backgroundColor: Colors.verdeClaro,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   progressText: {
-    fontFamily: 'Urbanist-Regular',
-    fontSize: 12,
-    color: Colors.grayMedium,
-  },
-  chevron: {
-    fontSize: 24,
-    color: Colors.grayMedium,
-    marginLeft: 8,
+    fontFamily: 'Urbanist-Bold',
+    fontSize: 13,
+    color: Colors.white,
+    minWidth: 32,
+    textAlign: 'right',
   },
 
   // ── Modal pantalla completa ──
