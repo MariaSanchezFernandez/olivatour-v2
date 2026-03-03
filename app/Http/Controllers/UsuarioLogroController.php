@@ -22,9 +22,6 @@ class UsuarioLogroController extends Controller
             ->select('logros.*')
             ->get();
 
-        if($logros->isEmpty())
-            return response()->json(['message' => 'El usuario no ha conseguido ningún logro'], 200);
-
         return response()->json($logros);
     }
 
