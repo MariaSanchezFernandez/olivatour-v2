@@ -1,4 +1,7 @@
 #!/bin/sh
+set -e
+
+npm install
 npx expo export --platform web
 cp -r public/. dist/
 node -e "
