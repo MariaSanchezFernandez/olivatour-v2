@@ -6,7 +6,7 @@ import { Colors } from '../constants/colors';
 import { MAPBOX_TOKEN, MAPBOX_STYLE, JAEN_CENTER, JAEN_ZOOM } from '../constants/api';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { LugarInteres } from '../types';
+import { LugarInteres, Poblacion } from '../types';
 import DetalleLugarScreen from './detail/DetalleLugarScreen';
 
 const TIPO_IMAGES: Record<string, any> = {
@@ -47,7 +47,7 @@ const MIN_ZOOM_LUGARES = 9;
 const MAX_ZOOM_MARKERS = 17; // igual que el maxZoom del mapa
 
 export default function MapaScreen() {
-  const { comarcas, lugares, userLogros, loadUserLogros } = useApp();
+  const { comarcas, poblaciones, lugares, userLogros, loadUserLogros } = useApp();
   const { userId, userToken } = useAuth();
   const { toggleVisita } = useApp();
 
@@ -119,6 +119,23 @@ export default function MapaScreen() {
             </TouchableOpacity>
           </Marker>
         ))}
+
+        {/* Etiquetas de localidad — aparecen al hacer zoom (>= 9) */}
+        {showLugares && poblaciones.map(pob => {
+          if (!pob.latitud || !pob.longitud) return null;
+          return (
+            <Marker
+              key={`pob-${pob.id}`}
+              longitude={pob.longitud}
+              latitude={pob.latitud}
+              anchor="bottom"
+            >
+              <View style={styles.localidadLabel}>
+                <Text style={styles.localidadLabelText}>{pob.nombre}</Text>
+              </View>
+            </Marker>
+          );
+        })}
 
         {/* Marcadores de lugares de interes — aparecen al hacer zoom (>= 9) */}
         {showLugares && lugares.map(lugar => {
@@ -215,6 +232,23 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontFamily: 'Urbanist-SemiBold',
     fontSize: 12,
+  },
+  localidadLabel: {
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  localidadLabelText: {
+    fontFamily: 'Urbanist-SemiBold',
+    fontSize: 11,
+    color: Colors.verdeOscuro,
   },
   lugarMarker: {
     cursor: 'pointer' as any,

@@ -51,10 +51,7 @@ export default function PerfilScreen() {
     if (!result.canceled && result.assets[0]) {
       setUploadingPhoto(true);
       try {
-        const url = await uploadPhoto(
-          result.assets[0].uri,
-          `users/${userId}/profile.jpg`
-        );
+        const url = await uploadPhoto(result.assets[0].uri);
         setPhotoUri(url);
         await AsyncStorage.setItem(`olivatour_photo_${userId}`, url);
       } catch {
@@ -203,6 +200,7 @@ const styles = StyleSheet.create({
   header: {
     height: 200,
     position: 'relative',
+    overflow: 'visible',
   },
   mapBackground: {
     width: '100%',
