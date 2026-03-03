@@ -1,5 +1,5 @@
 // API base URL — Railway (solo para endpoints JSON, no para archivos estáticos)
-export const API_BASE_URL = 'https://ingenious-commitment-production.up.railway.app';
+export const API_BASE_URL = 'https://olivatour-v2-production.up.railway.app';
 
 // CDN para imágenes — jsDelivr sirve archivos del repo de GitHub vía CDN global
 export const IMAGES_BASE_URL = 'https://cdn.jsdelivr.net/gh/MariaSanchezFernandez/olivatour-v2@main/public';
