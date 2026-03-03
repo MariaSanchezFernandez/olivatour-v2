@@ -43,7 +43,7 @@ const TIPO_COLORS: Record<string, string> = {
 };
 
 // Mostrar lugares de interés entre estos niveles de zoom
-const MIN_ZOOM_LUGARES = 9;
+const MIN_ZOOM_LUGARES = 12;
 const MAX_ZOOM_MARKERS = 17; // igual que el maxZoom del mapa
 
 export default function MapaScreen() {
