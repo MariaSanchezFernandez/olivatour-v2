@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { Comarca, LugarInteres, Logro } from '../types';
 import AppDataService from '../services/AppDataService';
 import { IMAGES_BASE_URL } from '../constants/api';
+import { verifyProximity, geoErrorMessage } from '../services/GeoService';
 
 interface PorcentajeMap {
   [comarcaId: number]: number;
@@ -90,6 +91,8 @@ export default function LogrosScreen() {
 
   // Lugar seleccionado → popup detalle
   const [selectedLugar, setSelectedLugar] = useState<LugarInteres | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [geoToggling, setGeoToggling] = useState(false);
 
   // Popup medalla ganada
   const [medallaGanada, setMedallaGanada] = useState<LugarInteres | null>(null);
@@ -353,13 +356,13 @@ export default function LogrosScreen() {
           visible={!!selectedLugar}
           animationType="fade"
           transparent
-          onRequestClose={() => setSelectedLugar(null)}
+          onRequestClose={() => { setSelectedLugar(null); setGeoError(null); }}
         >
           <View style={styles.detalleOverlay}>
             <View style={styles.detalleCard}>
               <TouchableOpacity
                 style={styles.detalleClose}
-                onPress={() => setSelectedLugar(null)}
+                onPress={() => { setSelectedLugar(null); setGeoError(null); }}
               >
                 <Text style={styles.detalleCloseText}>✕</Text>
               </TouchableOpacity>
@@ -399,22 +402,50 @@ export default function LogrosScreen() {
                   ) : null}
 
                   {selectedLugar.logro?.id ? (
-                    <TouchableOpacity
-                      style={[
-                        styles.toggleButton,
-                        isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
-                      ]}
-                      onPress={() => {
-                        handleToggleVisita(selectedLugar);
-                        setSelectedLugar(null);
-                      }}
-                    >
-                      <Text style={styles.toggleButtonText}>
-                        {isLugarVisitado(selectedLugar)
-                          ? 'Visitado — Quitar'
-                          : 'Marcar como visitado'}
-                      </Text>
-                    </TouchableOpacity>
+                    <>
+                      {geoError ? (
+                        <Text style={styles.geoErrorText}>{geoError}</Text>
+                      ) : null}
+                      <TouchableOpacity
+                        style={[
+                          styles.toggleButton,
+                          isLugarVisitado(selectedLugar) && styles.toggleButtonVisitado,
+                          geoToggling && styles.toggleButtonDisabled,
+                        ]}
+                        disabled={geoToggling}
+                        onPress={async () => {
+                          setGeoError(null);
+                          const wasVisitado = isLugarVisitado(selectedLugar);
+                          if (!wasVisitado) {
+                            setGeoToggling(true);
+                            const lat = parseFloat(String(selectedLugar.latitud));
+                            const lng = parseFloat(String(selectedLugar.longitud));
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                              const result = await verifyProximity(lat, lng);
+                              if (!result.ok) {
+                                setGeoError(geoErrorMessage(result, selectedLugar.nombre));
+                                setGeoToggling(false);
+                                return;
+                              }
+                            }
+                            setGeoToggling(false);
+                          }
+                          handleToggleVisita(selectedLugar);
+                          setSelectedLugar(null);
+                          setGeoError(null);
+                        }}
+                      >
+                        {geoToggling ? (
+                          <ActivityIndicator color={Colors.white} size="small" />
+                        ) : (
+                          <Text style={styles.toggleButtonText}>
+                            {isLugarVisitado(selectedLugar)
+                              ? 'Visitado — Quitar'
+                              : 'Marcar como visitado'}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
                   ) : null}
                 </ScrollView>
               )}
@@ -682,6 +713,17 @@ const styles = StyleSheet.create({
   },
   toggleButtonVisitado: {
     backgroundColor: Colors.grayMedium,
+  },
+  toggleButtonDisabled: {
+    opacity: 0.7,
+  },
+  geoErrorText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: Colors.error,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 18,
   },
   toggleButtonText: {
     fontFamily: 'Urbanist-Bold',

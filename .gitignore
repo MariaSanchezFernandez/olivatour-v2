@@ -3,3 +3,6 @@ OlivaTour-API-main.zip-2.download/
 .claude/
 olivatour-rn/node_modules/
 olivatour-rn/.expo/
+.DS_Store
+**/.DS_Store
+composer.phar

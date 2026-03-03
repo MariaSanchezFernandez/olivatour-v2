@@ -13,6 +13,7 @@ import {
 import { Colors } from '../../constants/colors';
 import { LugarInteres, Logro, Foto } from '../../types';
 import { IMAGES_BASE_URL, API_BASE_URL } from '../../constants/api';
+import { verifyProximity, geoErrorMessage } from '../../services/GeoService';
 
 const TIPO_IMAGES: Record<string, any> = {
   calles:      require('../../assets/images/Calles.png'),
@@ -69,6 +70,7 @@ export default function DetalleLugarScreen({
   onToggleVisita,
 }: Props) {
   const [toggling, setToggling] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const [fotos, setFotos] = useState<Foto[]>(lugar.fotos ?? []);
 
   // Fetch full lugar detail to get fotos when the sheet opens
@@ -89,6 +91,23 @@ export default function DetalleLugarScreen({
   };
 
   const handleToggle = async () => {
+    setGeoError(null);
+
+    // Solo verificar ubicacion al marcar (no al desmarcar)
+    if (!visitado) {
+      setToggling(true);
+      const lat = parseFloat(String(lugar.latitud));
+      const lng = parseFloat(String(lugar.longitud));
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const result = await verifyProximity(lat, lng);
+        if (!result.ok) {
+          setGeoError(geoErrorMessage(result, lugar.nombre));
+          setToggling(false);
+          return;
+        }
+      }
+    }
+
     setToggling(true);
     await onToggleVisita(lugar);
     setToggling(false);
@@ -195,6 +214,9 @@ export default function DetalleLugarScreen({
           {/* Botón toggle — fijo en la parte inferior */}
           {lugar.logro && (
             <View style={styles.bottomBar}>
+              {geoError ? (
+                <Text style={styles.geoErrorText}>{geoError}</Text>
+              ) : null}
               <TouchableOpacity
                 style={[styles.toggleBtn, visitado && styles.toggleBtnVisitado]}
                 onPress={handleToggle}
@@ -359,6 +381,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.nuevoVerde,
+  },
+  geoErrorText: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: Colors.error,
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 18,
   },
   toggleBtn: {
     backgroundColor: Colors.verdeSeleccionado,
