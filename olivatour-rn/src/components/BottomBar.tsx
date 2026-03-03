@@ -123,6 +123,13 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 14,
     ...(Platform.OS === 'web' ? {
+      position: 'fixed' as any,
+      bottom: 10,
+      left: 16,
+      right: 16,
+      marginHorizontal: 0,
+      marginBottom: 0,
+      zIndex: 1000,
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
     } as any : {}),

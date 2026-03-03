@@ -282,12 +282,10 @@ export default function LogrosScreen() {
       <Text style={[styles.title, isDesktop && styles.titleDesktop]}>Comarcas</Text>
 
       <FlatList
-        numColumns={isDesktop ? 2 : 1}
-        key={isDesktop ? 'desktop' : 'mobile'}
         data={comarcas}
         renderItem={renderComarca}
         keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, isDesktop && styles.listDesktop]}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -487,6 +485,12 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 24,
     paddingBottom: 20,
+  },
+  listDesktop: {
+    paddingHorizontal: 40,
+    maxWidth: 760,
+    alignSelf: 'center' as any,
+    width: '100%',
   },
 
   // ── Comarca card ──

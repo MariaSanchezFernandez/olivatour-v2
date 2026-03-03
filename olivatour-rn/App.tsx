@@ -148,7 +148,6 @@ function MainApp() {
       <StatusBar barStyle="dark-content" backgroundColor={Colors.verdeFondo} />
       <View style={styles.screenContainer}>{screens}</View>
       <BottomBar activeTab={currentTab} onTabPress={setCurrentTab} />
-      <View style={styles.safeAreaBar} />
     </View>
   );
 }
@@ -255,6 +254,7 @@ const styles = StyleSheet.create({
   },
   screenContainer: {
     flex: 1,
+    ...(Platform.OS === 'web' ? { paddingBottom: 90 } as any : {}),
   },
   safeAreaBar: {
     ...(Platform.OS === 'web'
