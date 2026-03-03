@@ -204,7 +204,6 @@ export default function LogrosScreen() {
         activeOpacity={0.88}
       >
         <Image source={{ uri: imgUri }} style={styles.comarcaImg} resizeMode="cover" />
-        <View style={styles.comarcaGradient} />
         <View style={styles.pctBadge}>
           <Image source={getPorcentajeImage(pct)} style={styles.pctBadgeImg} resizeMode="contain" />
         </View>
@@ -560,29 +559,25 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  comarcaGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.6) 100%)' as any,
-    backgroundColor: 'rgba(19,42,19,0.25)',
-  } as any,
   pctBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 52,
-    height: 52,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 26,
+    top: 10,
+    right: 10,
+    width: 64,
+    height: 64,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
   pctBadgeImg: {
-    width: 40,
-    height: 40,
+    width: 52,
+    height: 52,
   },
 
   // ── Modal pantalla completa ──

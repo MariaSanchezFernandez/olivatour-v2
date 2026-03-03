@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  Animated,
   useWindowDimensions,
 } from 'react-native';
 import { Colors } from '../constants/colors';
@@ -21,42 +22,33 @@ interface Props {
   onGoToLogros: () => void;
 }
 
-function ComarcaImageCard({ comarca, onPress }: { comarca: Comarca; onPress: () => void }) {
+function ComarcaCarouselCard({ comarca, onPress }: { comarca: Comarca; onPress: () => void }) {
   const imgUri = `${IMAGES_BASE_URL}/imagenes/comarcas/image/${encodeURIComponent(comarca.nombre)}.png`;
   return (
-    <TouchableOpacity style={cardSt.card} onPress={onPress} activeOpacity={0.88}>
+    <TouchableOpacity style={cardSt.card} onPress={onPress} activeOpacity={0.85}>
       <Image source={{ uri: imgUri }} style={cardSt.img} resizeMode="cover" />
-      <View style={cardSt.gradient} />
     </TouchableOpacity>
   );
 }
 
 const cardSt = StyleSheet.create({
   card: {
+    width: 200,
+    height: 130,
     borderRadius: 16,
-    marginBottom: 12,
+    marginRight: 12,
     overflow: 'hidden',
-    height: 100,
-    position: 'relative',
     backgroundColor: Colors.nuevoVerde,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.13,
     shadowRadius: 6,
     elevation: 3,
   },
   img: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
     width: '100%',
     height: '100%',
   },
-  gradient: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(19,42,19,0.55) 100%)' as any,
-    backgroundColor: 'rgba(19,42,19,0.2)',
-  } as any,
 });
 
 export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
@@ -64,19 +56,31 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
   const { comarcas, isLoading, loadData } = useApp();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
+
   const [curiosidadIndex, setCuriosidadIndex] = useState(
     Math.floor(Math.random() * CURIOSIDADES_JAEN.length)
   );
+  const curiosidadOpacity = useRef(new Animated.Value(1)).current;
 
   const refreshCuriosidad = () => {
-    let nextIndex;
-    do {
-      nextIndex = Math.floor(Math.random() * CURIOSIDADES_JAEN.length);
-    } while (nextIndex === curiosidadIndex && CURIOSIDADES_JAEN.length > 1);
-    setCuriosidadIndex(nextIndex);
+    Animated.timing(curiosidadOpacity, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * CURIOSIDADES_JAEN.length);
+      } while (nextIndex === curiosidadIndex && CURIOSIDADES_JAEN.length > 1);
+      setCuriosidadIndex(nextIndex);
+      Animated.timing(curiosidadOpacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+    });
   };
 
-  const top3Comarcas = comarcas.slice(0, 3);
   const nombreMostrado = userName?.split(' ')[0] ?? 'Explorador';
 
   return (
@@ -90,9 +94,7 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
       {/* Saludo */}
       <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         <Text style={styles.greeting}>¡Hola, {nombreMostrado}!</Text>
-        <Text style={styles.subtitle}>
-          Accede al mapa para empezar esta aventura
-        </Text>
+        <Text style={styles.subtitle}>Descubre la provincia de Jaén</Text>
       </View>
 
       {/* Botón al mapa */}
@@ -103,12 +105,13 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
           resizeMode="cover"
         />
         <View style={styles.mapaOverlay}>
+          <Text style={styles.mapaLabel}>Mapa interactivo</Text>
           <Text style={styles.mapaButtonText}>Abrir Mapa de Jaén</Text>
         </View>
       </TouchableOpacity>
 
-      {/* Comarcas recientes — mismas tarjetas de imagen que LogrosScreen (iOS: height 100) */}
-      {top3Comarcas.length > 0 && (
+      {/* Comarcas — carrusel horizontal con todas las comarcas */}
+      {comarcas.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Comarcas</Text>
@@ -116,29 +119,35 @@ export default function InicioScreen({ onGoToMapa, onGoToLogros }: Props) {
               <Text style={styles.seeAll}>Ver todas</Text>
             </TouchableOpacity>
           </View>
-          {top3Comarcas.map(comarca => (
-            <ComarcaImageCard
-              key={comarca.id}
-              comarca={comarca}
-              onPress={onGoToLogros}
-            />
-          ))}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContent}
+          >
+            {comarcas.map(comarca => (
+              <ComarcaCarouselCard
+                key={comarca.id}
+                comarca={comarca}
+                onPress={onGoToLogros}
+              />
+            ))}
+          </ScrollView>
         </View>
       )}
 
-      {/* Curiosidades de Jaén */}
+      {/* Curiosidades — estilo iOS: fondo verdeSeleccionado, texto blanco, fade al cambiar */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>¿Crees que conoces Jaén?</Text>
+          <Text style={styles.sectionTitle}>¿Sabías que...?</Text>
           <TouchableOpacity onPress={refreshCuriosidad} style={styles.refreshButton}>
             <Text style={styles.refreshText}>Otra</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.curiosidadCard}>
+        <Animated.View style={[styles.curiosidadCard, { opacity: curiosidadOpacity }]}>
           <Text style={styles.curiosidadText}>
             {CURIOSIDADES_JAEN[curiosidadIndex]}
           </Text>
-        </View>
+        </Animated.View>
       </View>
     </ScrollView>
   );
@@ -164,19 +173,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Bold',
     fontSize: 36,
     color: Colors.verdeOscuro,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   subtitle: {
     fontFamily: 'Urbanist-Regular',
     fontSize: 16,
     color: Colors.grayDark,
   },
+
+  // ── Botón mapa ──
   mapaButton: {
     marginHorizontal: 24,
     borderRadius: 20,
     overflow: 'hidden',
     height: 220,
-    marginBottom: 28,
+    marginBottom: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
@@ -189,24 +200,34 @@ const styles = StyleSheet.create({
   },
   mapaOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.32)',
+    backgroundColor: 'rgba(0,0,0,0.30)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+  },
+  mapaLabel: {
+    fontFamily: 'Urbanist-Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   mapaButtonText: {
     fontFamily: 'Urbanist-Bold',
-    fontSize: 22,
+    fontSize: 24,
     color: Colors.white,
   },
+
+  // ── Secciones ──
   section: {
-    marginHorizontal: 24,
-    marginBottom: 28,
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 14,
+    paddingHorizontal: 24,
   },
   sectionTitle: {
     fontFamily: 'Urbanist-Bold',
@@ -218,31 +239,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.verdeOscuro,
   },
+
+  // ── Carrusel comarcas ──
+  carouselContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 4,
+  },
+
+  // ── Curiosidades ──
   refreshButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    backgroundColor: Colors.nuevoVerde,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: Colors.verdeSeleccionado,
     borderRadius: 10,
   },
   refreshText: {
     fontFamily: 'Urbanist-SemiBold',
-    fontSize: 14,
-    color: Colors.verdeOscuro,
+    fontSize: 13,
+    color: Colors.white,
   },
   curiosidadCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    marginHorizontal: 24,
+    backgroundColor: Colors.verdeSeleccionado,
+    borderRadius: 20,
+    padding: 24,
+    minHeight: 140,
+    justifyContent: 'center',
+    shadowColor: Colors.verdeOscuro,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
   },
   curiosidadText: {
     fontFamily: 'Urbanist-Regular',
-    fontSize: 16,
-    color: Colors.verdeOscuro,
-    lineHeight: 26,
+    fontSize: 17,
+    color: Colors.white,
+    lineHeight: 27,
+    textAlign: 'center',
   },
 });
