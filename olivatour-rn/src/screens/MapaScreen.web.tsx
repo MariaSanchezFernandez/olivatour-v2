@@ -104,22 +104,6 @@ export default function MapaScreen() {
       >
         <NavigationControl position="top-right" />
 
-        {/* Marcadores de comarca — al hacer zoom desaparecen */}
-        {!showLugares && comarcas.map(comarca => (
-          <Marker
-            key={`comarca-${comarca.id}`}
-            longitude={comarca.longitud}
-            latitude={comarca.latitud}
-          >
-            <TouchableOpacity
-              style={styles.comarcaMarker}
-              onPress={() => handleSelectComarca(comarca)}
-            >
-              <Text style={styles.comarcaMarkerText}>{comarca.nombre}</Text>
-            </TouchableOpacity>
-          </Marker>
-        ))}
-
         {/* Marcadores de lugares de interes — aparecen al hacer zoom (>= 9) */}
         {showLugares && lugares.map(lugar => {
           if (!lugar.latitud || !lugar.longitud) return null;
@@ -199,22 +183,6 @@ export default function MapaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  comarcaMarker: {
-    backgroundColor: Colors.verdeOscuro,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    cursor: 'pointer' as any,
-  },
-  comarcaMarkerText: {
-    color: Colors.white,
-    fontFamily: 'Urbanist-SemiBold',
-    fontSize: 12,
   },
   lugarMarker: {
     cursor: 'pointer' as any,
